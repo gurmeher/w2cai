@@ -1,0 +1,19 @@
+# Python virtual environment
+#we dont share the venv folder, it contains the virtual environment and we dont want to commit it to the repository
+venv/
+
+# Python cache files
+__pycache__/
+*.pyc
+
+# Local SQLite DB
+*.db
+
+# Environment variables
+.env
+
+# VS Code settings
+.vscode/
+
+# macOS system files
+.DS_Store
