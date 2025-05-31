@@ -1,3 +1,6 @@
+#current bottlenecks: cant read slideshow posts, cant read posts with no product links, and cant read agent links
+
+
 import praw # Python Reddit API Wrapper, a Python library that allows you to easily interact with Reddit’s API, so we can read posts
 import re # regular expressions for matching patterns in text, idk gpt said to use it
 import time # time module for sleep functionality so we dont spam reddit
@@ -27,7 +30,10 @@ def ask_gpt_for_titles(post_text, urls): # function to ask GPT for product title
 You are given the title and body of a Reddit post and a list of product URLs. 
 Your task is to match each link to a meaningful name or product description. 
 If you cannot confidently match a name, return an empty list: []. 
-Don't include terms such as "qc", "from weidian", "from taobao", "from 1688".
+
+Don't include terms such as "qc", "from weidian", "from taobao", "from 1688", "replica", "fake", "knockoff", any hate speech, and any terms similar.
+Don't include terms like "shirt", "pants", "jacket", "shoes", "sneakers", "hoodie", "sweatshirt", "accessory" or any other generic clothing terms unless you're confident it is one. In this case, the item name itself is fine.
+
 Return the output in valid JSON like:
 
 [
@@ -75,6 +81,12 @@ def get_recent_posts(subreddit_name="fashionreps", limit=10):
 
         try:
             named_urls = ask_gpt_for_titles(full_text, product_urls)
+            if not named_urls:
+                # the scraper correctly skips any posts that have no product links but if ask_gpt_for_titles() returns an empty list,
+                # save_post_with_items() was still called, and the post gets saved with no items in the database
+                # this function will prevent that, skipping the post if no named URLs are found
+                print(f"No named URLs found for post: {post.title}")
+                continue
         except Exception as e:
             print(f"GPT failed for post: {post.title} — {e}")
             continue
@@ -86,5 +98,5 @@ def get_recent_posts(subreddit_name="fashionreps", limit=10):
 if __name__ == "__main__":
     # example usage with both subreddits
     for sub in ["fashionreps", "qualityreps"]:
-        get_recent_posts(sub, limit=50)
+        get_recent_posts(sub, limit=300)
         time.sleep(0.25)  # so ion crash reddit or myself
