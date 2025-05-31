@@ -134,4 +134,6 @@ def fetch_items_with_posts():
             "upvotes": upvotes
         })
     return list(result.values())
+
 init_db()
+# This code initializes the database and defines functions to save posts, isn't really needed after the first run but ig we can keep it for now
