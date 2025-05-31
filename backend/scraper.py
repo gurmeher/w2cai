@@ -26,7 +26,8 @@ def ask_gpt_for_titles(post_text, urls): # function to ask GPT for product title
     prompt = f"""
 You are given the title and body of a Reddit post and a list of product URLs. 
 Your task is to match each link to a meaningful name or product description. 
-If you are not sure about any of the product names, or if you cannot confidently match a name, return an empty list: []. 
+If you cannot confidently match a name, return an empty list: []. 
+Don't include terms such as "qc", "from weidian", "from taobao", "from 1688".
 Return the output in valid JSON like:
 
 [
@@ -42,7 +43,7 @@ Product Links:
 """
 
     response = openai.chat.completions.create(
-        model="gpt-4", #<------------------ model is chosen here!!!
+        model="gpt-4.1-mini", #<------------------ model is chosen here!!!
         messages=[{"role": "user", "content": prompt}],
         temperature=0.2
     )
@@ -66,7 +67,7 @@ def get_recent_posts(subreddit_name="fashionreps", limit=10):
 
         post_data = {
             "title": post.title,
-            "permalink": post.permalink,
+            "permalink": f"https://www.reddit.com{post.permalink}",
             "upvotes": post.score,
             "created_utc": post.created_utc,
             "subreddit": subreddit_name
