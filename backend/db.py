@@ -74,26 +74,31 @@ def save_post_with_items(post, product_urls):
             post_id_row = cur.fetchone()
         post_id = post_id_row[0]
 
-        for url in product_urls:
+        for item in product_urls:
+            url = item["url"]
+            name = item.get("name", None)
+
             # Insert or retrieve item
             cur.execute('''
-                INSERT INTO items (product_url, first_seen_utc)
-                VALUES (%s, %s)
+                INSERT INTO items (product_url, name, first_seen_utc)
+                VALUES (%s, %s, %s)
                 ON CONFLICT (product_url) DO NOTHING
                 RETURNING id
-            ''', (url, post['created_utc']))
+            ''', (url, name, post['created_utc']))
+
             item_id_row = cur.fetchone()
             if item_id_row is None:
                 cur.execute('SELECT id FROM items WHERE product_url = %s', (url,))
                 item_id_row = cur.fetchone()
             item_id = item_id_row[0]
 
-            # Insert link between post and item
+            # Link post and item
             cur.execute('''
                 INSERT INTO post_item_links (post_id, item_id)
                 VALUES (%s, %s)
                 ON CONFLICT DO NOTHING
             ''', (post_id, item_id))
+
 
         conn.commit()
     finally:

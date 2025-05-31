@@ -1,3 +1,4 @@
+#has some missing, had trouble updating with terminal
 annotated-types==0.7.0
 anyio==4.9.0
 certifi==2025.4.26
@@ -19,4 +20,5 @@ update-checker==0.18.0
 urllib3==2.4.0
 uvicorn==0.34.2
 websocket-client==1.8.0
-psycopg2-binary
+psycopg2-binary==2.9.10
+openai==1.82.1
