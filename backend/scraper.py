@@ -1,3 +1,4 @@
+#gurmeher bhasin 2025 All Rights Reserved
 #current bottlenecks: cant read slideshow posts, cant read posts with no product links, and cant read agent links
 
 
@@ -6,7 +7,7 @@ import re # regular expressions for matching patterns in text, idk gpt said to u
 import time # time module for sleep functionality so we dont spam reddit
 from dotenv import load_dotenv # to load environment variables from a .env file
 import os # lets us access environment variables, pythons standard library for interacting with the operating system
-from db import save_post_with_items # NOT dragonball
+from db import save_post_with_items, get_existing_permalinks # NOT dragonball
 import openai
 import json #jason
 
@@ -68,9 +69,17 @@ def extract_product_urls(text):
 def get_recent_posts(subreddit_name="fashionreps", limit=10):
     print("⬜️ \"get_recent_posts\" Called")
     subreddit = reddit.subreddit(subreddit_name)
-    posts = subreddit.new(limit=limit)
-    
+    posts = list(subreddit.new(limit=limit))
+
+    # Prepare permalinks for batch check
+    permalinks_to_check = [f"https://www.reddit.com{post.permalink}" for post in posts]
+    existing_permalinks = get_existing_permalinks(permalinks_to_check)
+
     for post in posts:
+        permalink = f"https://www.reddit.com{post.permalink}"
+        if permalink in existing_permalinks:
+            print(f"🟦[DUPLICATE-SKIPPED] Already in DB: {post.title}")
+            continue
         flair = (post.link_flair_text or "").lower()
         # skip posts with flairs that are in the SKIP_FLAIRS set
         if flair in SKIP_FLAIRS:
@@ -112,7 +121,7 @@ def get_recent_posts(subreddit_name="fashionreps", limit=10):
 if __name__ == "__main__":
     # example usage with both subreddits
     for sub in ["fashionreps", "qualityreps"]:
-        get_recent_posts(sub, limit=300) #limit is for both subreddits, this function alternates
+        get_recent_posts(sub, limit=30) #limit is for both subreddits, this function alternates
         time.sleep(0.25)  # so ion crash reddit or myself
 
 

@@ -135,5 +135,18 @@ def fetch_items_with_posts():
         })
     return list(result.values())
 
+def get_existing_permalinks(permalinks):
+    import psycopg2
+    conn = get_connection()
+    cur = conn.cursor()
+    cur.execute(
+        "SELECT permalink FROM posts WHERE permalink = ANY(%s);",
+        (permalinks,)
+    )
+    results = {row[0] for row in cur.fetchall()}
+    cur.close()
+    conn.close()
+    return results
+
 init_db()
 # This code initializes the database and defines functions to save posts, isn't really needed after the first run but ig we can keep it for now
