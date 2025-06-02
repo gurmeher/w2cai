@@ -25,16 +25,16 @@ PRODUCT_URL_REGEX = r"(https?://(?:item\.taobao\.com|weidian\.com|x\.yupoo\.com|
 # regex to match product links from Taobao, Weidian, Yupoo, and 1688
 
 # the useless flairs we want to skip (lowercase)
-SKIP_FLAIRS={"wdywt", "w2c", "discussion", "shitpost", "question", "guide", "news", 
+SKIP_FLAIRS={"w2c", "shitpost", "guide", "news", 
              "presale", "lc", "announcement", "interest check"}
-#line 1 fashionreps -> (in my experience some w2c post has product links), line 2 qualityreps -> (maybe add "retail reference pics", "seller update", fit pic",)
+#line 1 fashionreps -> (in my experience some w2c post has product links, maybe "wdywt", "discussion", "question"), line 2 qualityreps -> (maybe add "retail reference pics", "seller update", fit pic",)
 
 #-------------------------------------------------------------------------------------#
 
 def ask_gpt_for_titles(post_text, urls): # function to ask GPT for product titles
-    print("⬜️ ChatGPT Called")
+    print("⬜️[SYSTEM] ChatGPT Called")
     prompt = f"""
-You are given the title and body of a Reddit post and a list of product URLs. 
+You are given the title and body of a Reddit post with links of product URLs. 
 Your task is to match each link to a meaningful name or product description. 
 If you cannot confidently match a name, return an empty list: []. 
 
@@ -67,7 +67,7 @@ def extract_product_urls(text):
     return list(set(re.findall(PRODUCT_URL_REGEX, text)))
 
 def get_recent_posts(subreddit_name="fashionreps", limit=10):
-    print("⬜️ \"get_recent_posts\" Called")
+    print(f"⬜️[SYSTEM] \"get_recent_posts\" Called (for {subreddit_name})")
     subreddit = reddit.subreddit(subreddit_name)
     posts = list(subreddit.new(limit=limit))
 
@@ -121,7 +121,7 @@ def get_recent_posts(subreddit_name="fashionreps", limit=10):
 if __name__ == "__main__":
     # example usage with both subreddits
     for sub in ["fashionreps", "qualityreps"]:
-        get_recent_posts(sub, limit=30) #limit is for both subreddits, this function alternates
+        get_recent_posts(sub, limit=100) #limit is for both subreddits, this function alternates
         time.sleep(0.25)  # so ion crash reddit or myself
 
 

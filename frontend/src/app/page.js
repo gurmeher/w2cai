@@ -1,3 +1,15 @@
+export default function Home() {
+  return (
+    <div className="p-4">
+      <h1 className="text-3xl">
+        <span className="font-bold">W2C</span>ai
+      </h1>
+    </div>
+  );
+}
+
+
+/* PROVIDED TEXT
 import Image from "next/image";
 
 export default function Home() {
@@ -101,3 +113,4 @@ export default function Home() {
     </div>
   );
 }
+*/
