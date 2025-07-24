@@ -53,7 +53,7 @@ export default function SearchBar({ onResults }: Props) {
       />
       <button
         type="submit"
-        className="absolute right-2 top-1/2 -translate-y-1/2 bg-indigo-700 text-white rounded-full w-12 h-12 flex items-center justify-center hover:bg-gray-800 transition-colors"
+        className="cursor-pointer absolute right-2 top-1/2 -translate-y-1/2 bg-indigo-700 text-white rounded-full w-12 h-12 flex items-center justify-center hover:bg-indigo-900 transition-colors"
         aria-label="Search"
       >
         <svg

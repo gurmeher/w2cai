@@ -121,7 +121,7 @@ def get_recent_posts(subreddit_name="fashionreps", limit=10):
 if __name__ == "__main__":
     # example usage with both subreddits
     for sub in ["fashionreps", "qualityreps"]:
-        get_recent_posts(sub, limit=100) #limit is for both subreddits, this function alternates
+        get_recent_posts(sub, limit=10) #limit is for both subreddits, this function alternates
         time.sleep(0.25)  # so ion crash reddit or myself
 
 

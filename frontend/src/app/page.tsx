@@ -14,7 +14,18 @@ type Item = {
   name: string;
   product_url: string;
   first_seen_utc: number;
+  post_item_links?: {
+    posts: {
+      id: number;
+      title: string;
+      permalink: string;
+      subreddit: string;
+      upvotes: number;
+      created_utc: number;
+    }[]; // ← this was the issue (make it an array)
+  }[];
 };
+
 
 export default function Home() {
   //no clue what these do, was in starter code
@@ -27,7 +38,22 @@ export default function Home() {
     const loadInitialItems = async () => {
       const { data, error } = await supabase
         .from('items')
-        .select('id, name, product_url, first_seen_utc')
+        .select(`
+        id,
+        name,
+        product_url,
+        first_seen_utc,
+        post_item_links (
+          posts (
+            id,
+            title,
+            permalink,
+            subreddit,
+            upvotes,
+            created_utc
+          )
+        )
+      `) // literally pull everything, need to get the reddit info to use for the popup
         .order('first_seen_utc', { ascending: false });
 
       if (error) {
@@ -68,6 +94,7 @@ export default function Home() {
                 name={item.name}
                 url={item.product_url}
                 first_seen_utc={item.first_seen_utc}
+                reddit_posts={item.post_item_links?.flatMap(link => link.posts) ?? []}
               />
             ))}
           </div>
