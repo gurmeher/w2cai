@@ -7,6 +7,7 @@ type Item = {
   id: number;
   name: string;
   product_url: string;
+  first_seen_utc: number;
 };
 
 type Props = {
@@ -19,7 +20,7 @@ export default function SearchBar({ onResults }: Props) {
   const handleSearch = async () => {
     let query = supabase
       .from('items')
-      .select('id, name, product_url')
+      .select('id, name, product_url, first_seen_utc')
       .order('first_seen_utc', { ascending: false });
 
     if (searchTerm.trim()) {
@@ -52,7 +53,7 @@ export default function SearchBar({ onResults }: Props) {
       />
       <button
         type="submit"
-        className="absolute right-2 top-1/2 -translate-y-1/2 bg-indigo-700 text-white rounded-full w-12 h-12 flex items-center justify-center hover:bg-gray-700 transition"
+        className="absolute right-2 top-1/2 -translate-y-1/2 bg-indigo-700 text-white rounded-full w-12 h-12 flex items-center justify-center hover:bg-gray-800 transition-colors"
         aria-label="Search"
       >
         <svg

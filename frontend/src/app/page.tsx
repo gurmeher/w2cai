@@ -13,6 +13,7 @@ type Item = {
   id: number;
   name: string;
   product_url: string;
+  first_seen_utc: number;
 };
 
 export default function Home() {
@@ -26,7 +27,7 @@ export default function Home() {
     const loadInitialItems = async () => {
       const { data, error } = await supabase
         .from('items')
-        .select('id, name, product_url')
+        .select('id, name, product_url, first_seen_utc')
         .order('first_seen_utc', { ascending: false });
 
       if (error) {
@@ -48,13 +49,13 @@ export default function Home() {
         <Polygon1 />
         <Polygon2 />
         
-        <div className="mx-auto max-w-4xl py-32 sm:py-30 lg:py-30 text-left">
-          <h1 className="text-center pr-0 lg:pr-50 mb-2 text-5xl font-semibold tracking-tight text-left text-gray-900 sm:text-7xl">
+        <div className="mx-auto max-w-4xl py-20 lg:py-35 text-left">
+          <h1 className="text-center pr-0 lg:pr-50 mb-2 text-5xl font-bold tracking-tight text-left text-gray-900 sm:text-7xl font-sans">
             Discover Trending Finds from Reddit
           </h1>
 
           <p className="mt-2 mb-10 text-lg font-medium text-pretty text-gray-500 sm:text-xl/8 text-left">
-            W2Cai uses AI to organize links from top subreddits, so you don’t have to.
+            W2Cai uses AI to organize links from top subreddits, so you don’t have to rely on limited, manual spreadsheets.
           </p>
 
           <SearchBar onResults={setItems} />
@@ -62,7 +63,12 @@ export default function Home() {
           
           <div className="py-8 grid grid-cols-1 gap-5 mt-4 mx-auto max-w-4xl">
             {items.map((item) => (
-              <ProductCard key={item.id} name={item.name} url={item.product_url} />
+              <ProductCard
+                id={item.id}
+                name={item.name}
+                url={item.product_url}
+                first_seen_utc={item.first_seen_utc}
+              />
             ))}
           </div>
         </div>
