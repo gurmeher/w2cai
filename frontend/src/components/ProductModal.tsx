@@ -1,4 +1,4 @@
-//i genuinely dont know how alot of this works
+//this is for what pops up when you press see more on the producct card
 import { forwardRef } from 'react';
 
 type ProductModalProps = {
@@ -81,7 +81,7 @@ const ProductModal = forwardRef<HTMLDialogElement, ProductModalProps>(
                         href={post.permalink}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="text-blue-600 hover:underline break-all"
+                        className="text-indigo-600 hover:underline break-all"
                       >
                         {post.title} ({post.subreddit})
                       </a>
@@ -111,7 +111,7 @@ const ProductModal = forwardRef<HTMLDialogElement, ProductModalProps>(
             </div>
 
           <div className="mt-6 flex gap-3">
-            <a
+            {/*<a
               href={url}
               target="_blank"
               rel="noopener noreferrer"
@@ -120,7 +120,7 @@ const ProductModal = forwardRef<HTMLDialogElement, ProductModalProps>(
                 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
             >
               Visit Product
-            </a>
+            </a> */}
             <button
               onClick={closeModal}
               className="cursor-pointer rounded-md shadow-xs bg-gray-200 hover:bg-gray-300 transition-colors px-3.5 py-2.5 

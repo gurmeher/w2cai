@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import ProductCard from '@/components/ProductCard';
+import ProductList from '@/components/ProductList';
 import SearchBar from '@/components/SearchBar';
 import Header from '@/components/Header';
 import Polygon1 from '@/components/Polygon1';
@@ -28,17 +29,24 @@ type Item = {
 
 
 export default function Home() {
-  //no clue what these do, was in starter code
   const [items, setItems] = useState<Item[]>([]);
+  const [page, setPage] = useState(1);
+  const [loading, setLoading] = useState(false);
+  const [hasMore, setHasMore] = useState(true);
+  const pageSize = 20; // Number of items to load per page
   //const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   // This effect loads initial items from the Supabase database
   // It fetches items ordered by the date they were first seen, in descending order
-  useEffect(() => {
-    const loadInitialItems = async () => {
-      const { data, error } = await supabase
-        .from('items')
-        .select(`
+  const loadItems = async (pageToLoad: number) => {
+    setLoading(true);
+
+    const from = (pageToLoad - 1) * pageSize;
+    const to = from + pageSize - 1;
+
+    const { data, error } = await supabase
+      .from('items')
+      .select(`
         id,
         name,
         product_url,
@@ -53,18 +61,24 @@ export default function Home() {
             created_utc
           )
         )
-      `) // literally pull everything, need to get the reddit info to use for the popup
-        .order('first_seen_utc', { ascending: false });
+      `)
+      .order('first_seen_utc', { ascending: false })
+      .range(from, to);
 
-      if (error) {
-        console.error('Initial load error:', error); // If there's an error, it logs the error to the console
-
-      } else {
-        setItems(data || []); // If the data is successfully fetched, it updates the items state with the fetched data
+    if (error) {
+      console.error('Load error:', error);
+    } else {
+      if (data.length < pageSize) {
+        setHasMore(false);
       }
-    };
+      setItems(prev => [...prev, ...data]);
+    }
 
-    loadInitialItems();
+    setLoading(false);
+  };
+
+  useEffect(() => {
+    loadItems(1); // Initial load
   }, []);
 
   //actual showed elements
@@ -75,31 +89,38 @@ export default function Home() {
         <Polygon1 />
         <Polygon2 />
         
-        <div className="mx-auto max-w-4xl py-20 lg:py-35 text-left">
-          <h1 className="text-center pr-0 lg:pr-50 mb-2 text-5xl font-bold tracking-tight text-left text-gray-900 sm:text-7xl font-sans">
+        <div className="mx-auto max-w-4xl py-20 lg:py-30">
+          <h1 className="text-center mb-5 text-5xl font-bold tracking-tight text-gray-900 sm:text-7xl font-sans">
             Discover Trending Finds from Reddit
           </h1>
 
-          <p className="mt-2 mb-10 text-lg font-medium text-pretty text-gray-500 sm:text-xl/8 text-left">
+          <p className="mt-2 mb-5 text-lg font-medium text-pretty text-gray-500 sm:text-xl/8 text-center">
             W2Cai uses AI to organize links from top subreddits, so you don’t have to rely on limited, manual spreadsheets.
           </p>
 
-          <SearchBar onResults={setItems} />
+          <div className="flex items-center justify-center gap-x-6">
+              <a
+                href="/search"
+                className="cursor-pointer rounded-md shadow-xs bg-indigo-600 hover:bg-indigo-800 transition-colors px-3.5 py-2.5 
+                text-sm font-bold text-white focus-visible:outline-2 
+                focus-visible:outline-offset-2 focus-visible:outline-indigo-600
+                bg-gradient-to-r from-indigo-500 via-purple-500 to-indigo-600 animate-gradient-x">
+                Start searching
+              </a>
+              <a href="https://www.reddit.com/user/is3fiddy/" className="text-sm/6 font-semibold text-gray-900">
+                Join the discussion <span aria-hidden="true">→</span>
+              </a>
+            </div>
+
+          {/* <SearchBar onResults={setItems} /> */}
+          <h2 className="text-2xl font-bold mt-20 text-gray-900">
+            Latest Finds
+          </h2>
           
-          
-          <div className="py-8 grid grid-cols-1 gap-5 mt-4 mx-auto max-w-4xl">
-            {items.map((item) => (
-              <ProductCard
-                id={item.id}
-                name={item.name}
-                url={item.product_url}
-                first_seen_utc={item.first_seen_utc}
-                reddit_posts={item.post_item_links?.flatMap(link => link.posts) ?? []}
-              />
-            ))}
-          </div>
+          <ProductList />
+
         </div>
-    
+
       </div>
     </div>
   );

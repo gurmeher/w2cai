@@ -1,48 +1,23 @@
 'use client';
 
 import { useState } from 'react';
-import { supabase } from '@/lib/supabase';
-
-type Item = {
-  id: number;
-  name: string;
-  product_url: string;
-  first_seen_utc: number;
-};
 
 type Props = {
-  onResults: (items: Item[]) => void;
+  onSearch: (term: string) => void;
 };
 
-export default function SearchBar({ onResults }: Props) {
+export default function SearchBar({ onSearch }: Props) {
   const [searchTerm, setSearchTerm] = useState('');
 
-  const handleSearch = async () => {
-    let query = supabase
-      .from('items')
-      .select('id, name, product_url, first_seen_utc')
-      .order('first_seen_utc', { ascending: false });
-
-    if (searchTerm.trim()) {
-      query = query.ilike('name', `%${searchTerm.trim()}%`);
-    }
-
-    const { data, error } = await query;
-    if (error) {
-      console.error('Search error:', error);
-      onResults([]);
-    } else {
-      onResults(data || []);
-    }
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    onSearch(searchTerm.trim());
   };
 
   return (
     <form
       className="relative w-full max-w-4xl mx-auto"
-      onSubmit={(e) => {
-        e.preventDefault();
-        handleSearch();
-      }}
+      onSubmit={handleSubmit}
     >
       <input
         type="text"
