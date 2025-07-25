@@ -22,7 +22,7 @@ export default function Home() {
           </h1>
 
           <p className="mt-2 mb-5 text-lg font-medium text-pretty text-gray-500 sm:text-xl/8 text-center">
-            W2Cai uses AI to organize links from top subreddits, so you don't have to rely on limited, manual spreadsheets.
+            W2Cai uses AI to organize links from top subreddits, so you don’t have to rely on limited, manual spreadsheets.
           </p>
 
           <div className="flex items-center justify-center gap-x-6">
