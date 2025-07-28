@@ -96,14 +96,14 @@ def scrape_weidian_image(url):
 def scrape_1688_image(url):
     """Scrape the main product image from a 1688 product page"""
     # TODO: Implement when you're ready to add 1688 support
-    print(f"🟨[IMAGE-TODO] 1688 scraping not implemented yet for {url}")
+    print(f"🖼️[IMAGE-TODO] 1688 scraping not implemented yet for {url}")
     return None
 
 #-------------------------------------------------------------------------------------#
 def scrape_taobao_image(url):
     """Scrape the main product image from a Taobao product page"""
     # TODO: Implement when you're ready to add Taobao support
-    print(f"🟨[IMAGE-TODO] Taobao scraping not implemented yet for {url}")
+    print(f"🖼️[IMAGE-TODO] Taobao scraping not implemented yet for {url}")
     return None
 
 #-------------------------------------------------------------------------------------#

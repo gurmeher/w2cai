@@ -36,6 +36,7 @@ def ask_gpt_for_titles(post_text, urls): # function to ask GPT for product title
 You are given the title and body of a Reddit post with links of product URLs. 
 Your task is to match each link to a meaningful name or product description. 
 If you cannot confidently match a name, return an empty list: []. 
+Write the name in title capitalization format, ex: "Fear of God Pants and Hat"
 
 Don't include terms such as "qc", "from weidian", "from taobao", "from 1688", "replica", "fake", "knockoff", "retail", "legit", any hate speech, and any terms similar.
 Don't include terms like "shirt", "pants", "hoodie", "shoes", "sneakers", "hoodie", "accessory" or any other generic clothing terms unless you're confident it is one. In this case, the item name itself is fine.
@@ -43,8 +44,8 @@ Don't include terms like "shirt", "pants", "hoodie", "shoes", "sneakers", "hoodi
 Return the output in valid JSON like:
 
 [
-  {{"url": "https://example.com/item1", "name": "Techwear cargo pants"}},
-  {{"url": "https://example.com/item2", "name": "Replica Jordan 1 sneakers"}}
+  {{"url": "https://example.com/item1", "name": "Techwear Cargo Pants"}},
+  {{"url": "https://example.com/item2", "name": "Jordan 1 Sneakers"}}
 ]
 
 Reddit Post:
@@ -64,7 +65,7 @@ Product Links:
 
     for item in named_urls:
         url = item["url"]
-        print(f"🟦[IMAGE] Scraping image for: {url}")
+        print(f"🖼️[IMAGE] Scraping image for: {url}")
         image_url = scrape_product_image(url)
         item["image_url"] = image_url  # Add image URL to the item data
     
@@ -85,17 +86,32 @@ def get_recent_posts(subreddit_name="fashionreps", limit=10):
     for post in posts:
         permalink = f"https://www.reddit.com{post.permalink}"
         if permalink in existing_permalinks:
-            print(f"🟦[DUPLICATE-SKIPPED] Already in DB: {post.title}")
+            print(f"🟨[DUPLICATE-SKIPPED] Already in DB: {post.title}")
             continue
         flair = (post.link_flair_text or "").lower()
         # skip posts with flairs that are in the SKIP_FLAIRS set
         if flair in SKIP_FLAIRS:
             print(f"🟨[FLAIR-SKIPPED] Skipped due to flair: [{flair}] — {post.title}")
             continue
-        # combine post body and title for URL scanning
-        full_text = f"{post.title}\n\n{post.selftext}"
-        product_urls = extract_product_urls(full_text)
         
+        
+        # Combine post title, body, and top-level OP comments
+        full_text = f"{post.title}\n\n{post.selftext}"
+
+        # Gather top-level OP comments (fast, no replace_more)
+        op_top_comments = [
+            comment.body for comment in post.comments
+            if comment.author and comment.author.name == post.author.name
+        ]
+
+        if op_top_comments:
+            full_text += "\n\n" + "\n\n".join(op_top_comments)
+
+        #if op_top_comments:
+        #    print(f"❗[COMMENT-FOUND] Added {len(op_top_comments)} top-level OP comment(s) to post: {post.title}")
+
+        product_urls = extract_product_urls(full_text)
+
         if not product_urls:
             continue  # skip posts with no product links, wonder if this will allow it to be added later if gpt finds no title
 
@@ -116,11 +132,11 @@ def get_recent_posts(subreddit_name="fashionreps", limit=10):
                 print(f"🟨[NOURL-SKIPPED] Skipped, no named URLs found for post: {post.title}")
                 continue
         except Exception as e:
-            print(f"🟥[GPT-ERROR] GPT failed for post: {post.title} — {e}")
+            print(f"🟥🟥🟥[GPT-ERROR] GPT failed for post: {post.title} — {e}")
             continue
 
         save_post_with_items(post_data, named_urls)
-        print(f"🟩[SUCCESS] Processed post: {post.title} with {len(named_urls)} product links.")
+        print(f"🟩🟩🟩[SUCCESS] Processed post: {post.title} with {len(named_urls)} product links.")
 
 #-------------------------------------------------------------------------------------#
 #ALTERNATING SUBREDDIT FUNCTION
