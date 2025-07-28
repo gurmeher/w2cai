@@ -1,9 +1,6 @@
 'use client'
 
-//import { useEffect, useState } from 'react';
-//import { supabase } from '@/lib/supabase';
 import ProductList from '@/components/ProductList';
-//import SearchBar from '@/components/SearchBar';
 import Header from '@/components/Header';
 import Polygon1 from '@/components/Polygon1';
 import Polygon2 from '@/components/Polygon2';

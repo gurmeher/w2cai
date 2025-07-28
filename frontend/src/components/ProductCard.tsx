@@ -7,6 +7,7 @@ export type ProductCardProps = {
   name: string;
   url: string;
   first_seen_utc: number;
+  image_url?: string;
   reddit_posts?: {
     id: number;
     title: string;
@@ -17,7 +18,7 @@ export type ProductCardProps = {
   }[];
 };
 
-export default function ProductCard({ id, name, url, first_seen_utc, reddit_posts }: ProductCardProps) {
+export default function ProductCard({ id, name, url, image_url, first_seen_utc, reddit_posts }: ProductCardProps) {
   const dialogRef = useRef<HTMLDialogElement>(null);
   
   const daysAgo = Math.floor((Date.now() - first_seen_utc * 1000) / 86400000);
@@ -31,28 +32,46 @@ export default function ProductCard({ id, name, url, first_seen_utc, reddit_post
 
   return (
     <>
-      <div className="border-2 border-gray-200 p-4 rounded hover:shadow transition-shadow">
-        <div>
-          <div className="flex items-center">
-          <h2 className="text-lg font-bold text-black">{name}</h2>
-          <h2 className="font-bold text-gray-400 ml-auto whitespace-nowrap ">{daysAgo} {daysText} ago</h2>
-        </div>
-        {subreddit && (
-          <div className="mt-1 mb-8 inline-block rounded-full bg-purple-100 text-gray-800 text-xs font-bold px-3 py-1">
-            r/{subreddit}
+      <div className="border-2 border-gray-200 p-4 rounded hover:shadow transition-shadow flex justify-between">
+        {/* Left side: Name, subreddit, button */}
+        <div className="flex flex-col justify-between">
+          <div>
+            <h2 className="text-lg lg:text-xl font-bold text-black">{name}</h2>
+            {subreddit && (
+              <div className="mt-1 mb-4 inline-block rounded-full bg-purple-100 text-gray-800 text-xs font-bold px-3 py-1">
+                r/{subreddit}
+              </div>
+            )}
           </div>
-        )}
+
+          <button
+            onClick={openModal}
+            className="mt-auto cursor-pointer rounded-md shadow-xs bg-indigo-600 hover:bg-indigo-800 transition-colors px-3.5 py-2.5 w-25
+            text-sm font-bold text-white focus-visible:outline-2 
+            focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
+          >
+            See Info
+          </button>
+        </div>
+
+        {/* Right side: Days ago and image */}
+        <div className="flex flex-col items-end ml-4 flex-shrink-0">
+          <div className="text-gray-400 font-bold mb-2 whitespace-nowrap">
+            {daysAgo} {daysText} ago
+          </div>
+          {image_url ? (
+            <img
+              src={image_url}
+              alt={name}
+              className="w-30 h-30 lg:w-40 lg:h-40 object-cover rounded"
+            />
+          ) : (
+            <div className="w-30 h-30 lg:w-40 lg:h-40 rounded bg-gray-200" />
+          )}
+
+        </div>
       </div>
 
-      <button
-          onClick={openModal}
-          className="cursor-pointer rounded-md shadow-xs bg-indigo-600 hover:bg-indigo-800 transition-colors px-3.5 py-2.5 
-          text-sm font-bold text-white focus-visible:outline-2 
-          focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
-        >
-          See Info
-        </button>
-      </div>
 
       <ProductModal
         ref={dialogRef}

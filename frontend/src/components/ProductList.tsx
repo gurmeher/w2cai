@@ -8,6 +8,7 @@ export type Item = {
   id: number;
   name: string;
   product_url: string;
+  image_url?: string;
   first_seen_utc: number;
   post_item_links?: {
     posts: {
@@ -44,6 +45,7 @@ export default function ProductList({ searchTerm = '' }: ProductListProps) {
         id,
         name,
         product_url,
+        image_url,
         first_seen_utc,
         post_item_links (
           posts (
@@ -140,6 +142,7 @@ export default function ProductList({ searchTerm = '' }: ProductListProps) {
                 id={item.id}
                 name={item.name}
                 url={item.product_url}
+                image_url={item.image_url}
                 first_seen_utc={item.first_seen_utc}
                 reddit_posts={item.post_item_links?.flatMap(link => link.posts) ?? []}
               />
