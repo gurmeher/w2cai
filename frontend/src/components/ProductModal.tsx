@@ -6,6 +6,7 @@ type ProductModalProps = {
   name: string;
   url: string;
   first_seen_utc: number;
+  image_url?: string;
   reddit_posts?: {
     id: number;
     title: string;
@@ -17,7 +18,7 @@ type ProductModalProps = {
 };
 
 const ProductModal = forwardRef<HTMLDialogElement, ProductModalProps>(
-  ({ id, name, url, first_seen_utc, reddit_posts }, ref) => {
+  ({ id, name, url, first_seen_utc, image_url, reddit_posts }, ref) => {
     const daysAgo = Math.floor((Date.now() - first_seen_utc * 1000) / 86400000);
     const daysText = daysAgo === 1 ? "day" : "days";
 
@@ -53,6 +54,18 @@ const ProductModal = forwardRef<HTMLDialogElement, ProductModalProps>(
               ×
             </button>
           </div>
+
+          {image_url ? (
+            <img
+              src={image_url}
+              alt={name}
+              className="mt-2 w-100 max-h-100 object-cover rounded mb-4 mx-auto"
+            />
+          ) : (
+            <div className="mb-4 mt-2 w-full max-h-32 bg-gray-200 rounded flex items-center justify-center text-gray-500 text-sm h-40 font-bold">
+              No image available, see reddit or product link
+            </div>
+          )}
 
           <div className="space-y-4">
             <div>

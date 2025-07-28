@@ -66,7 +66,7 @@ export default function ProductCard({ id, name, url, image_url, first_seen_utc, 
               className="w-30 h-30 lg:w-40 lg:h-40 object-cover rounded"
             />
           ) : (
-            <div className="w-30 h-30 lg:w-40 lg:h-40 rounded bg-gray-200" />
+            <div className="w-30 h-30 lg:w-40 lg:h-40 rounded bg-white" />
           )}
 
         </div>
@@ -79,6 +79,7 @@ export default function ProductCard({ id, name, url, image_url, first_seen_utc, 
         name={name}
         url={url}
         first_seen_utc={first_seen_utc}
+        image_url={image_url}
         reddit_posts={reddit_posts}
       />
     </>
