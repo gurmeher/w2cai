@@ -1,7 +1,6 @@
-#gurmeher bhasin 2025 All Rights Reserved
+#This file is scraper.py
 #current bottlenecks: cant read slideshow posts, cant read posts with no product links, and cant read agent links
-
-
+from imagescraper import scrape_product_image
 import praw # Python Reddit API Wrapper, a Python library that allows you to easily interact with Reddit’s API, so we can read posts
 import re # regular expressions for matching patterns in text, idk gpt said to use it
 import time # time module for sleep functionality so we dont spam reddit
@@ -21,7 +20,7 @@ reddit = praw.Reddit(
     user_agent=os.getenv("REDDIT_USER_AGENT")
 )
 
-PRODUCT_URL_REGEX = r"(https?://(?:item\.taobao\.com|weidian\.com|x\.yupoo\.com|detail\.1688\.com)[^\s)\]]+)" 
+PRODUCT_URL_REGEX = r"(https?://(?:item\.taobao\.com|(?:[\w\-]+\.)*weidian\.com|x\.yupoo\.com|detail\.1688\.com)[^\s)\]]+)"
 # regex to match product links from Taobao, Weidian, Yupoo, and 1688
 
 # the useless flairs we want to skip (lowercase)
@@ -61,7 +60,15 @@ Product Links:
         temperature=0.2
     )
     content = response.choices[0].message.content
-    return json.loads(content)
+    named_urls = json.loads(content)
+
+    for item in named_urls:
+        url = item["url"]
+        print(f"🟦[IMAGE] Scraping image for: {url}")
+        image_url = scrape_product_image(url)
+        item["image_url"] = image_url  # Add image URL to the item data
+    
+    return named_urls
 
 def extract_product_urls(text):
     return list(set(re.findall(PRODUCT_URL_REGEX, text)))
@@ -121,7 +128,7 @@ def get_recent_posts(subreddit_name="fashionreps", limit=10):
 if __name__ == "__main__":
     # example usage with both subreddits
     for sub in ["fashionreps", "qualityreps"]:
-        get_recent_posts(sub, limit=10) #limit is for both subreddits, this function alternates
+        get_recent_posts(sub, limit=40) #limit is for both subreddits, this function alternates
         time.sleep(0.25)  # so ion crash reddit or myself
 
 

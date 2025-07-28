@@ -1,4 +1,4 @@
-// components/ProductCard.tsx
+//components/ProductCard.tsx
 import { useRef } from 'react';
 import ProductModal from './ProductModal';
 

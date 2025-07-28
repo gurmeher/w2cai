@@ -1,3 +1,4 @@
+#This file is db.py
 import os #lets us access environment variables
 import psycopg2 # PostgreSQL database adapter for Python
 from dotenv import load_dotenv # to load environment variables from a .env file
@@ -20,7 +21,8 @@ def init_db():
             id SERIAL PRIMARY KEY,
             product_url TEXT UNIQUE,
             name TEXT,
-            first_seen_utc REAL
+            first_seen_utc REAL,
+            image_url TEXT
         )
     ''')
 
@@ -43,6 +45,11 @@ def init_db():
             item_id INTEGER REFERENCES items(id) ON DELETE CASCADE,
             PRIMARY KEY (post_id, item_id)
         )
+    ''')
+
+    cur.execute('''
+        ALTER TABLE items 
+        ADD COLUMN IF NOT EXISTS image_url TEXT;
     ''')
 
     conn.commit()
@@ -77,14 +84,15 @@ def save_post_with_items(post, product_urls):
         for item in product_urls:
             url = item["url"]
             name = item.get("name", None)
+            image_url = item.get("image_url", None)
 
             # Insert or retrieve item
             cur.execute('''
-                INSERT INTO items (product_url, name, first_seen_utc)
-                VALUES (%s, %s, %s)
+                INSERT INTO items (product_url, name, first_seen_utc, image_url)
+                VALUES (%s, %s, %s, %s)
                 ON CONFLICT (product_url) DO NOTHING
                 RETURNING id
-            ''', (url, name, post['created_utc']))
+            ''', (url, name, post['created_utc'], image_url))
 
             item_id_row = cur.fetchone()
             if item_id_row is None:
@@ -109,7 +117,7 @@ def fetch_items_with_posts():
     conn = get_connection()
     cur = conn.cursor()
     cur.execute('''
-        SELECT i.id, i.product_url, i.name, p.id, p.title, p.permalink, p.upvotes
+        SELECT i.id, i.product_url, i.name, i.image_url, p.id, p.title, p.permalink, p.upvotes
         FROM items i
         JOIN post_item_links pil ON i.id = pil.item_id
         JOIN posts p ON p.id = pil.post_id
@@ -120,11 +128,12 @@ def fetch_items_with_posts():
     conn.close()
 
     result = {}
-    for item_id, product_url, name, post_id, title, permalink, upvotes in rows:
+    for item_id, product_url, name, image_url, post_id, title, permalink, upvotes in rows:
         if item_id not in result:
             result[item_id] = {
                 "product_url": product_url,
                 "name": name,
+                "image_url": image_url,
                 "posts": []
             }
         result[item_id]["posts"].append({
