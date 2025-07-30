@@ -68,7 +68,7 @@ export default function ProductCard({ id, name, url, image_url, first_seen_utc, 
               width={100}
               height={100}
             />
-          ) : (
+          ) : ( 
             <div className="w-30 h-30 lg:w-40 lg:h-40 rounded bg-white" />
           )}
 
