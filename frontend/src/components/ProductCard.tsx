@@ -1,6 +1,7 @@
 //components/ProductCard.tsx
 import { useRef } from 'react';
 import ProductModal from './ProductModal';
+import Image from 'next/image';
 
 export type ProductCardProps = {
   id: number;
@@ -60,10 +61,12 @@ export default function ProductCard({ id, name, url, image_url, first_seen_utc, 
             {daysAgo} {daysText} ago
           </div>
           {image_url ? (
-            <img
+            <Image
               src={image_url}
               alt={name}
               className="w-30 h-30 lg:w-40 lg:h-40 object-cover rounded"
+              width={100}
+              height={100}
             />
           ) : (
             <div className="w-30 h-30 lg:w-40 lg:h-40 rounded bg-white" />

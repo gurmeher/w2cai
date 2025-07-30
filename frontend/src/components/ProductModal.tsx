@@ -1,5 +1,6 @@
 //this is for what pops up when you press see more on the producct card
 import { forwardRef } from 'react';
+import Image from 'next/image';
 
 type ProductModalProps = {
   id: number;
@@ -56,10 +57,12 @@ const ProductModal = forwardRef<HTMLDialogElement, ProductModalProps>(
           </div>
 
           {image_url ? (
-            <img
+            <Image
               src={image_url}
               alt={name}
               className="mt-2 w-100 max-h-100 object-cover rounded mb-4 mx-auto"
+              width={720}
+              height={720}
             />
           ) : (
             <div className="mb-4 mt-2 w-full max-h-32 bg-gray-200 rounded flex items-center justify-center text-gray-500 text-sm h-40 font-bold">
