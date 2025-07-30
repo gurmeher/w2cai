@@ -30,6 +30,7 @@ export default function ProductCard({ id, name, url, image_url, first_seen_utc, 
   };
 
   const subreddit = reddit_posts?.[0]?.subreddit;
+  const redditMentions = reddit_posts?.length ?? 0;
 
   return (
     <>
@@ -43,6 +44,13 @@ export default function ProductCard({ id, name, url, image_url, first_seen_utc, 
                 r/{subreddit}
               </div>
             )}
+
+            {redditMentions > 0 && (
+              <div className="text-xs text-gray-500 font-medium -mt-2 mb-4">
+                🔗 {redditMentions} Reddit {redditMentions === 1 ? 'mention' : 'mentions'}
+              </div>
+            )}
+
           </div>
 
           <button
