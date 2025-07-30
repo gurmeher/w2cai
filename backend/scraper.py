@@ -1,5 +1,6 @@
 #This file is scraper.py
 #current bottlenecks: cant read slideshow posts, cant read posts with no product links, and cant read agent links
+from requests import post
 from imagescraper import scrape_product_image
 import praw # Python Reddit API Wrapper, a Python library that allows you to easily interact with Reddit’s API, so we can read posts
 import re # regular expressions for matching patterns in text, idk gpt said to use it
@@ -75,7 +76,7 @@ def extract_product_urls(text):
     return list(set(re.findall(PRODUCT_URL_REGEX, text)))
 
 def get_recent_posts(subreddit_name="fashionreps", limit=10):
-    print(f"⬜️[SYSTEM] \"get_recent_posts\" Called (for {subreddit_name})")
+    print(f"\n⬜️⬜️⬜️[SYSTEM] \"get_recent_posts\" Called (for {subreddit_name})\n")
     subreddit = reddit.subreddit(subreddit_name)
     posts = list(subreddit.new(limit=limit))
 
@@ -83,15 +84,17 @@ def get_recent_posts(subreddit_name="fashionreps", limit=10):
     permalinks_to_check = [f"https://www.reddit.com{post.permalink}" for post in posts]
     existing_permalinks = get_existing_permalinks(permalinks_to_check)
 
+    postcount = 0
     for post in posts:
+        postcount += 1
         permalink = f"https://www.reddit.com{post.permalink}"
         if permalink in existing_permalinks:
-            print(f"🟨[DUPLICATE-SKIPPED] Already in DB: {post.title}")
+            print(f"🟨[DUPLICATE-SKIPPED](#{postcount}) Already in DB: {post.title}")
             continue
         flair = (post.link_flair_text or "").lower()
         # skip posts with flairs that are in the SKIP_FLAIRS set
         if flair in SKIP_FLAIRS:
-            print(f"🟨[FLAIR-SKIPPED] Skipped due to flair: [{flair}] — {post.title}")
+            print(f"🟨[FLAIR-SKIPPED](#{postcount}) Skipped due to flair: [{flair}] — {post.title}")
             continue
         
         
@@ -99,9 +102,11 @@ def get_recent_posts(subreddit_name="fashionreps", limit=10):
         full_text = f"{post.title}\n\n{post.selftext}"
 
         # Gather top-level OP comments (fast, no replace_more)
+        # Replace your current op_top_comments line with:
         op_top_comments = [
             comment.body for comment in post.comments
-            if comment.author and comment.author.name == post.author.name
+            if hasattr(comment, 'author') and comment.author and post.author 
+            and comment.author.name == post.author.name
         ]
 
         if op_top_comments:
@@ -132,11 +137,11 @@ def get_recent_posts(subreddit_name="fashionreps", limit=10):
                 print(f"🟨[NOURL-SKIPPED] Skipped, no named URLs found for post: {post.title}")
                 continue
         except Exception as e:
-            print(f"🟥🟥🟥[GPT-ERROR] GPT failed for post: {post.title} — {e}")
+            print(f"\n🟥🟥🟥[GPT-ERROR] GPT failed for post: {post.title} — {e} \n")
             continue
 
         save_post_with_items(post_data, named_urls)
-        print(f"🟩🟩🟩[SUCCESS] Processed post: {post.title} with {len(named_urls)} product links.")
+        print(f"🟩🟩🟩[SUCCESS](#{postcount}) Processed post: {post.title} with {len(named_urls)} product links.\n")
 
 #-------------------------------------------------------------------------------------#
 #ALTERNATING SUBREDDIT FUNCTION
@@ -144,7 +149,7 @@ def get_recent_posts(subreddit_name="fashionreps", limit=10):
 if __name__ == "__main__":
     # example usage with both subreddits
     for sub in ["fashionreps", "qualityreps"]:
-        get_recent_posts(sub, limit=40) #limit is for both subreddits, this function alternates
+        get_recent_posts(sub, limit=1000) #limit is for both subreddits, this function alternates
         time.sleep(0.25)  # so ion crash reddit or myself
 
 

@@ -82,14 +82,14 @@ def scrape_weidian_image(url):
                 print(f"🟪[IMAGE-SUCCESS] Found fallback geilicdn image for {url}: {clean_url}")
                 return clean_url
 
-        print(f"🟥[IMAGE-NOTFOUND] No suitable image found for {url}")
+        print(f"🟥🟥🟥[IMAGE-NOTFOUND] No suitable image found for {url}")
         return None
 
     except requests.exceptions.RequestException as e:
-        print(f"🟥[IMAGE-ERROR] Network error for {url}: {e}")
+        print(f"🟥🟥🟥[IMAGE-ERROR] Network error for {url}: {e}")
         return None
     except Exception as e:
-        print(f"🟥[IMAGE-ERROR] Parsing error for {url}: {e}")
+        print(f"🟥🟥🟥[IMAGE-ERROR] Parsing error for {url}: {e}")
         return None
 
 #-------------------------------------------------------------------------------------#
