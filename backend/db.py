@@ -52,6 +52,12 @@ def init_db():
         ADD COLUMN IF NOT EXISTS image_url TEXT;
     ''')
 
+    cur.execute('''
+        ALTER TABLE items 
+        ADD COLUMN IF NOT EXISTS reddit_mentions INTEGER DEFAULT 0;
+    ''')
+
+
     conn.commit()
     cur.close()
     conn.close()
@@ -106,6 +112,17 @@ def save_post_with_items(post, product_urls):
                 VALUES (%s, %s)
                 ON CONFLICT DO NOTHING
             ''', (post_id, item_id))
+
+            # Update reddit_mentions count
+            cur.execute('''
+                UPDATE items
+                SET reddit_mentions = (
+                    SELECT COUNT(*) FROM post_item_links
+                    WHERE item_id = %s
+                )
+                WHERE id = %s
+            ''', (item_id, item_id))
+
 
 
         conn.commit()
