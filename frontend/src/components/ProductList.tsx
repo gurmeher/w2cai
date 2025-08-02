@@ -10,6 +10,7 @@ export type Item = {
   product_url: string;
   image_url?: string;
   first_seen_utc: number;
+  reddit_mentions?: number;
   post_item_links?: {
     posts: {
       id: number;
@@ -31,6 +32,7 @@ export default function ProductList({ searchTerm = '' }: ProductListProps) {
   const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(false);
   const [hasMore, setHasMore] = useState(true);
+  const [sortOption, setSortOption] = useState<'latest' | 'mentions'>('latest');
   const pageSize = 20;
 
   const loadItems = async (pageToLoad: number, reset = false) => {
@@ -47,6 +49,7 @@ export default function ProductList({ searchTerm = '' }: ProductListProps) {
         product_url,
         image_url,
         first_seen_utc,
+        reddit_mentions,
         post_item_links (
           posts (
             id,
@@ -57,10 +60,19 @@ export default function ProductList({ searchTerm = '' }: ProductListProps) {
             created_utc
           )
         )
-      `)
-      .order('first_seen_utc', { ascending: false })
-      .range(from, to);
+      `);
 
+    // Apply sorting
+    if (sortOption === 'latest') {
+      query = query.order('first_seen_utc', { ascending: false });
+    } else {
+      query = query.order('reddit_mentions', { ascending: false });
+    }
+
+    // Apply range for pagination
+    query = query.range(from, to);
+
+    // Apply name filter if present
     if (searchTerm.trim()) {
       query = query.ilike('name', `%${searchTerm.trim()}%`);
     }
@@ -84,7 +96,7 @@ export default function ProductList({ searchTerm = '' }: ProductListProps) {
     setPage(1);
     setHasMore(true);
     loadItems(1, true);
-  }, [searchTerm]);
+  }, [searchTerm, sortOption]);
 
   const handleLoadMore = () => {
     const nextPage = page + 1;
@@ -94,8 +106,26 @@ export default function ProductList({ searchTerm = '' }: ProductListProps) {
 
   return (
     <>
+      <div className="flex justify-end items-center mb-4 mx-auto max-w-4xl">
+        <label htmlFor="sort" className="mr-2 text-sm font-medium text-gray-700">
+          Sort by:
+        </label>
+        <select
+          id="sort"
+          value={sortOption}
+          onChange={e => {
+            setSortOption(e.target.value as 'latest' | 'mentions');
+          }}
+          className="border border-gray-300 rounded px-2 py-1 text-sm"
+        >
+          <option value="latest">Latest Finds</option>
+          <option value="mentions">Most Mentions</option>
+        </select>
+      </div>
+
       {loading && page === 1 ? (
         <div className="flex justify-center items-center mt-10" role="status">
+          {/* Spinner */}
           <svg
             aria-hidden="true"
             className="w-12 h-12 text-gray-200 animate-spin dark:text-gray-400 fill-indigo-600"
