@@ -1,8 +1,11 @@
+//ProductList.tsx
+
 'use client';
 
 import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import ProductCard from './ProductCard';
+import SortDropdown, { SortOption } from './SortDropdown';
 
 export type Item = {
   id: number;
@@ -25,14 +28,16 @@ export type Item = {
 
 type ProductListProps = {
   searchTerm?: string;
+  defaultSort?: SortOption;
+  showSort?: boolean;
 };
 
-export default function ProductList({ searchTerm = '' }: ProductListProps) {
+export default function ProductList({ searchTerm = '', defaultSort = 'popular', showSort = true}: ProductListProps) {
   const [items, setItems] = useState<Item[]>([]);
   const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(false);
   const [hasMore, setHasMore] = useState(true);
-  const [sortOption, setSortOption] = useState<'latest' | 'mentions'>('latest');
+  const [sortOption, setSortOption] = useState<SortOption>(defaultSort);
   const pageSize = 20;
 
   const loadItems = async (pageToLoad: number, reset = false) => {
@@ -104,28 +109,22 @@ export default function ProductList({ searchTerm = '' }: ProductListProps) {
     loadItems(nextPage);
   };
 
+  const handleSortChange = (newSortOption: SortOption) => {
+    setSortOption(newSortOption);
+  };
+
   return (
     <>
-      <div className="flex justify-end items-center mb-4 mx-auto max-w-4xl">
-        <label htmlFor="sort" className="mr-2 text-sm font-medium text-gray-700">
-          Sort by:
-        </label>
-        <select
-          id="sort"
+      {showSort && (
+        <SortDropdown 
           value={sortOption}
-          onChange={e => {
-            setSortOption(e.target.value as 'latest' | 'mentions');
-          }}
-          className="border border-gray-300 rounded px-2 py-1 text-sm"
-        >
-          <option value="latest">Latest Finds</option>
-          <option value="mentions">Most Mentions</option>
-        </select>
-      </div>
+          onChange={handleSortChange}
+          className="mb-2 mx-auto max-w-4xl"
+        />
+      )}
 
       {loading && page === 1 ? (
         <div className="flex justify-center items-center mt-10" role="status">
-          {/* Spinner */}
           <svg
             aria-hidden="true"
             className="w-12 h-12 text-gray-200 animate-spin dark:text-gray-400 fill-indigo-600"
@@ -142,7 +141,6 @@ export default function ProductList({ searchTerm = '' }: ProductListProps) {
               50.5908C90.9186 27.9921 72.5987 9.67226 50 
               9.67226C27.4013 9.67226 9.08144 27.9921 
               9.08144 50.5908Z"
-              fill="currentColor"
             />
             <path
               d="M93.9676 39.0409C96.393 38.4038 97.8624 35.9116 

@@ -38,10 +38,10 @@ export default function Home() {
 
           {/* <SearchBar onResults={setItems} /> */}
           <h2 className="text-2xl font-bold mt-20 text-gray-900">
-            Latest Finds
+            Popular Products
           </h2>
-          
-          <ProductList />
+
+          <ProductList defaultSort="popular" showSort={false} />
 
         </div>
 
