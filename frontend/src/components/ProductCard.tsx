@@ -41,15 +41,11 @@ export default function ProductCard({ id, name, url, image_url, first_seen_utc, 
             <h2 className="text-lg lg:text-xl font-bold text-black">{name}</h2>
             {subreddit && (
               <div className="mt-1 mb-4 inline-block rounded-full bg-purple-100 text-gray-800 text-xs font-bold px-3 py-1">
-                r/{subreddit}
+                🔗 {redditMentions} Reddit {redditMentions === 1 ? 'Mention' : 'Mentions'}
               </div>
             )}
 
-            {redditMentions > 0 && (
-              <div className="text-xs text-gray-500 font-medium -mt-2 mb-4">
-                🔗 {redditMentions} Reddit {redditMentions === 1 ? 'mention' : 'mentions'}
-              </div>
-            )}
+            {/*ADD ANYTHING TO PUT BELOW REDDIT MENTIONS HERE*/}
 
           </div>
 
