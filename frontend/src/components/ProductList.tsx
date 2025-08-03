@@ -12,6 +12,7 @@ export type Item = {
   name: string;
   product_url: string;
   image_url?: string;
+  price?: number;
   first_seen_utc: number;
   reddit_mentions?: number;
   post_item_links?: {
@@ -53,6 +54,7 @@ export default function ProductList({ searchTerm = '', defaultSort = 'popular', 
         name,
         product_url,
         image_url,
+        price,
         first_seen_utc,
         reddit_mentions,
         post_item_links (
@@ -141,6 +143,7 @@ export default function ProductList({ searchTerm = '', defaultSort = 'popular', 
               50.5908C90.9186 27.9921 72.5987 9.67226 50 
               9.67226C27.4013 9.67226 9.08144 27.9921 
               9.08144 50.5908Z"
+              fill="currentColor"
             />
             <path
               d="M93.9676 39.0409C96.393 38.4038 97.8624 35.9116 
@@ -173,6 +176,7 @@ export default function ProductList({ searchTerm = '', defaultSort = 'popular', 
                 image_url={item.image_url}
                 first_seen_utc={item.first_seen_utc}
                 reddit_posts={item.post_item_links?.flatMap(link => link.posts) ?? []}
+                price={item.price}
               />
             ))}
           </div>

@@ -9,6 +9,7 @@ export type ProductCardProps = {
   url: string;
   first_seen_utc: number;
   image_url?: string;
+  price?: number;
   reddit_posts?: {
     id: number;
     title: string;
@@ -19,7 +20,7 @@ export type ProductCardProps = {
   }[];
 };
 
-export default function ProductCard({ id, name, url, image_url, first_seen_utc, reddit_posts }: ProductCardProps) {
+export default function ProductCard({ id, name, url, image_url, first_seen_utc, reddit_posts, price }: ProductCardProps) {
   const dialogRef = useRef<HTMLDialogElement>(null);
   
   const daysAgo = Math.floor((Date.now() - first_seen_utc * 1000) / 86400000);
@@ -34,24 +35,33 @@ export default function ProductCard({ id, name, url, image_url, first_seen_utc, 
 
   return (
     <>
-      <div className="border-2 border-gray-200 p-4 rounded hover:shadow transition-shadow flex justify-between">
+      <div className="border border-gray-200 bg-white rounded-2xl p-4 flex justify-between items-stretch shadow-sm hover:shadow-md transition-shadow">
         {/* Left side: Name, subreddit, button */}
         <div className="flex flex-col justify-between">
           <div>
             <h2 className="text-lg lg:text-xl font-bold text-black">{name}</h2>
             {subreddit && (
-              <div className="mt-1 mb-4 inline-block rounded-full bg-purple-100 text-gray-800 text-xs font-bold px-3 py-1">
+              <div className="mt-1 inline-block rounded-full bg-purple-100 text-gray-800 text-xs font-bold px-3 py-1">
                 🔗 {redditMentions} Reddit {redditMentions === 1 ? 'Mention' : 'Mentions'}
               </div>
             )}
 
-            {/*ADD ANYTHING TO PUT BELOW REDDIT MENTIONS HERE*/}
+            {price != null ? (
+              <div className="mt-2 lg:mt-2 text-xl mb-2 lg:text-2xl font-bold tracking-tight text-gray-800">
+                {new Intl.NumberFormat('en-US', { style: 'currency', currency: 'CNY' }).format(price)}
+              </div>
+            ) : (
+              <div className="mt-2 lg:mt-4 text-sm mb-2 lg:text-lg font-medium text-gray-400 italic">
+                Price unavailable, see link or use agent
+              </div>
+            )}
+
 
           </div>
 
           <button
             onClick={openModal}
-            className="mt-auto cursor-pointer rounded-md shadow-xs bg-indigo-600 hover:bg-indigo-800 transition-colors px-3.5 py-2.5 w-25
+            className="mt-auto cursor-pointer rounded-md shadow-xs bg-indigo-600 hover:bg-indigo-800 transition-all px-3.5 py-2.5 w-25
             text-sm font-bold text-white focus-visible:outline-2 
             focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
           >
@@ -68,12 +78,12 @@ export default function ProductCard({ id, name, url, image_url, first_seen_utc, 
             <Image
               src={image_url}
               alt={name}
-              className="w-30 h-30 lg:w-40 lg:h-40 object-cover rounded"
+              className="w-30 h-30 lg:w-40 lg:h-40 object-cover rounded-lg border"
               width={100}
               height={100}
             />
           ) : ( 
-            <div className="w-30 h-30 lg:w-40 lg:h-40 rounded bg-white" />
+            <div className="w-30 h-30 lg:w-40 lg:h-40 rounded-lg border bg-white" />
           )}
 
         </div>
