@@ -1,6 +1,6 @@
 #This file is scraper.py - Simple optimizations without new dependencies
 #current bottlenecks: cant read slideshow posts, cant read posts with no product links, and cant read agent links
-from imagescraper import scrape_product_image
+from imagescraper import scrape_product_data
 import praw # Python Reddit API Wrapper, a Python library that allows you to easily interact with Reddit's API, so we can read posts
 import re # regular expressions for matching patterns in text, idk gpt said to use it
 import time # time module for sleep functionality so we dont spam reddit
@@ -30,7 +30,7 @@ SKIP_FLAIRS={"w2c", "shitpost", "guide", "news",
              "presale", "lc", "announcement", "interest check"}
 
 # Configuration
-BATCH_SIZE = 3  # Process 3 posts at once
+BATCH_SIZE = 5 # Number of posts to process in parallel
 MAX_WORKERS = 5  # Thread pool size
 
 #-------------------------------------------------------------------------------------#
@@ -117,9 +117,9 @@ def ask_gpt_for_titles(post_text, urls, retries=0): # function to ask GPT for pr
             else:
                 print(f"🟨[VALIDATION] Skipping invalid item: {item}")
         
-        # Parallel image scraping
+        # Parallel data scraping (images + prices)
         if valid_items:
-            scrape_images_parallel(valid_items)
+            scrape_data_parallel(valid_items)
         
         return valid_items
     
@@ -132,33 +132,42 @@ def ask_gpt_for_titles(post_text, urls, retries=0): # function to ask GPT for pr
             print(f"🟥🟥🟥[GPT-ERROR] GPT failed after retries: {e}")
             return []
 
-def scrape_single_image(item):
-    """Scrape image for a single item"""
+def scrape_single_item_data(item):
+    """Scrape both image and price for a single item"""
     url = item["url"]
     try:
-        print(f"🖼️[IMAGE] Scraping image for: {url}")
-        image_url = scrape_product_image(url)
-        item["image_url"] = image_url
+        print(f"🖼️💰[DATA] Scraping image and price for: {url}")
+        data = scrape_product_data(url)
+        item["image_url"] = data['image_url']
+        item["price"] = data['price']
+        
+        # Log what we found
+        #if data['image_url']:
+        #    print(f"✅[IMAGE] Found image for {url}")
+        #if data['price']:
+        #    print(f"💰[PRICE] Found price {data['price']} for {url}")
+            
         return item
     except Exception as e:
-        print(f"🟥🟥🟥[IMAGE-ERROR] Failed to scrape image for {url}: {e}")
+        print(f"🟥🟥🟥[DATA-ERROR] Failed to scrape data for {url}: {e}")
         item["image_url"] = None
+        item["price"] = None
         return item
 
-def scrape_images_parallel(named_urls):
-    """Scrape images in parallel using ThreadPoolExecutor"""
-    print(f"🖼️[IMAGE] Scraping {len(named_urls)} images in parallel...")
+def scrape_data_parallel(named_urls):
+    """Scrape images and prices in parallel using ThreadPoolExecutor"""
+    print(f"🖼️💰[DATA] Scraping {len(named_urls)} items (image + price) in parallel...")
     
     with ThreadPoolExecutor(max_workers=3) as executor:
-        # Submit all image scraping tasks
-        future_to_item = {executor.submit(scrape_single_image, item): item for item in named_urls}
+        # Submit all data scraping tasks
+        future_to_item = {executor.submit(scrape_single_item_data, item): item for item in named_urls}
         
         # Wait for completion
         for future in as_completed(future_to_item):
             try:
                 future.result()  # This will raise an exception if the task failed
             except Exception as e:
-                print(f"🟥🟥🟥[IMAGE-ERROR] Image scraping task failed: {e}")
+                print(f"🟥🟥🟥[DATA-ERROR] Data scraping task failed: {e}")
 
 def extract_product_urls(text):
     return list(set(re.findall(PRODUCT_URL_REGEX, text)))
@@ -225,7 +234,12 @@ def process_single_post(post_info):
             return False
         
         save_post_with_items(post_data, named_urls)
-        print(f"🟩🟩🟩[SUCCESS] Processed: {post_data['title']} with {len(named_urls)} product links.\n")
+        
+        # Log summary of what was saved
+        items_with_price = sum(1 for item in named_urls if item.get('price'))
+        items_with_image = sum(1 for item in named_urls if item.get('image_url'))
+        print(f"🟩🟩🟩[SUCCESS] Processed: {post_data['title']}")
+        print(f"📊[SUMMARY] {len(named_urls)} items | {items_with_price} with prices | {items_with_image} with images\n")
         return True
         
     except Exception as e:
@@ -259,7 +273,7 @@ def process_posts_in_batches(posts_to_process):
     print(f"📊[FINAL] Successfully processed {total_processed} posts")
 
 def get_recent_posts(subreddit_name="fashionreps", limit=100):
-    print(f"\n⬜️⬜️⬜️[SYSTEM] \"get_recent_posts\" Called (for {subreddit_name}) - OPTIMIZED VERSION\n")
+    print(f"\n⬜️⬜️⬜️[SYSTEM] \"get_recent_posts\" Called (for {subreddit_name}) - OPTIMIZED VERSION WITH PRICE SCRAPING\n")
     
     subreddit = reddit.subreddit(subreddit_name)
     posts = list(subreddit.new(limit=limit))

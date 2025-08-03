@@ -57,6 +57,11 @@ def init_db():
         ADD COLUMN IF NOT EXISTS reddit_mentions INTEGER DEFAULT 0;
     ''')
 
+    # Add price column to items table
+    cur.execute('''
+        ALTER TABLE items 
+        ADD COLUMN IF NOT EXISTS price DECIMAL(10,2);
+    ''')
 
     conn.commit()
     cur.close()
@@ -91,14 +96,18 @@ def save_post_with_items(post, product_urls):
             url = item["url"]
             name = item.get("name", None)
             image_url = item.get("image_url", None)
+            price = item.get("price", None)  # Get price from item
 
-            # Insert or retrieve item
+            # Insert or retrieve item with price
             cur.execute('''
-                INSERT INTO items (product_url, name, first_seen_utc, image_url)
-                VALUES (%s, %s, %s, %s)
-                ON CONFLICT (product_url) DO NOTHING
+                INSERT INTO items (product_url, name, first_seen_utc, image_url, price)
+                VALUES (%s, %s, %s, %s, %s)
+                ON CONFLICT (product_url) DO UPDATE SET
+                    name = COALESCE(EXCLUDED.name, items.name),
+                    image_url = COALESCE(EXCLUDED.image_url, items.image_url),
+                    price = COALESCE(EXCLUDED.price, items.price)
                 RETURNING id
-            ''', (url, name, post['created_utc'], image_url))
+            ''', (url, name, post['created_utc'], image_url, price))
 
             item_id_row = cur.fetchone()
             if item_id_row is None:
@@ -123,9 +132,11 @@ def save_post_with_items(post, product_urls):
                 WHERE id = %s
             ''', (item_id, item_id))
 
-
-
         conn.commit()
+        
+    except Exception as e:
+        conn.rollback()
+        raise
     finally:
         cur.close()
         conn.close()
@@ -134,7 +145,7 @@ def fetch_items_with_posts():
     conn = get_connection()
     cur = conn.cursor()
     cur.execute('''
-        SELECT i.id, i.product_url, i.name, i.image_url, p.id, p.title, p.permalink, p.upvotes
+        SELECT i.id, i.product_url, i.name, i.image_url, i.price, p.id, p.title, p.permalink, p.upvotes
         FROM items i
         JOIN post_item_links pil ON i.id = pil.item_id
         JOIN posts p ON p.id = pil.post_id
@@ -145,12 +156,13 @@ def fetch_items_with_posts():
     conn.close()
 
     result = {}
-    for item_id, product_url, name, image_url, post_id, title, permalink, upvotes in rows:
+    for item_id, product_url, name, image_url, price, post_id, title, permalink, upvotes in rows:
         if item_id not in result:
             result[item_id] = {
                 "product_url": product_url,
                 "name": name,
                 "image_url": image_url,
+                "price": float(price) if price else None,
                 "posts": []
             }
         result[item_id]["posts"].append({
