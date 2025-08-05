@@ -96,6 +96,7 @@ export default function ProductCard({ id, name, url, image_url, first_seen_utc, 
         name={name}
         url={url}
         first_seen_utc={first_seen_utc}
+        price={price}
         image_url={image_url}
         reddit_posts={reddit_posts}
       />
