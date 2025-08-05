@@ -1,16 +1,11 @@
 'use client'
 
-import { useState } from 'react';
 import Header from '@/components/Header';
 import Polygon1 from '@/components/Polygon1';
 import Polygon2 from '@/components/Polygon2';
-import SearchBar from '@/components/SearchBar';
-import ProductList from '@/components/ProductList';
 import Footer from '@/components/Footer';
 
-export default function SearchPage() {
-  const [searchTerm, setSearchTerm] = useState('');
-
+export default function Page() {
   return (
     <div className="bg-white min-h-screen">
       <Header />
@@ -20,13 +15,9 @@ export default function SearchPage() {
 
         <div className="mx-auto max-w-4xl py-15 lg:py-25 text-left">
           <h1 className="text-center mb-5 text-4xl font-bold tracking-tight text-gray-900 sm:text-5xl font-sans">
-            Search
+            header
           </h1>
-          <div className="mb-5">
-            <SearchBar onSearch={(term) => setSearchTerm(term)} />
-          </div>
-
-          <ProductList searchTerm={searchTerm} defaultSort="latest" />
+          
         </div>
       </div>
       <Footer />

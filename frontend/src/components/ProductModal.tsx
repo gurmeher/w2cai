@@ -62,7 +62,7 @@ const ProductModal = forwardRef<HTMLDialogElement, ProductModalProps>(
             <Image
               src={image_url}
               alt={name}
-              className="mt-4 w-full max-h-full object-cover rounded mb-4 mx-auto"
+              className="mt-4 w-full max-h-120 object-cover rounded mb-4 mx-auto"
               width={720}
               height={720}
             />

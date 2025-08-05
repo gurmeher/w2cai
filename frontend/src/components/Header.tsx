@@ -9,7 +9,7 @@ import { Dialog, DialogPanel } from '@headlessui/react';
 const navigation = [
   { name: 'Home', href: '/' },
   { name: 'Search', href: '/search' },
-  { name: 'Contact', href: '/contact' },
+  { name: 'FAQs', href: '/faqs' },
 ];
 
 export default function Header() {

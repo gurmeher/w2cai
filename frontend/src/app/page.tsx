@@ -4,6 +4,7 @@ import ProductList from '@/components/ProductList';
 import Header from '@/components/Header';
 import Polygon1 from '@/components/Polygon1';
 import Polygon2 from '@/components/Polygon2';
+import Footer from '@/components/Footer';
 
 export default function Home() {
   return (
@@ -46,6 +47,7 @@ export default function Home() {
         </div>
 
       </div>
+      <Footer />
     </div>
   );
 }
