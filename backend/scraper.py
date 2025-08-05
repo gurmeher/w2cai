@@ -33,7 +33,85 @@ SKIP_FLAIRS={"w2c", "shitpost", "guide", "news",
 BATCH_SIZE = 5 # Number of posts to process in parallel
 MAX_WORKERS = 5  # Thread pool size
 
+BRAND_ACRONYMS = {
+    # Luxury Fashion Houses
+    "BLCG": "Balenciaga",
+    "LV": "Louis Vuitton(LV)",
+    "MM": "Maison Margiela(MM) ",
+    "CDG": "CDG(Comme des Garcons)",
+    "FOG": "Fear of God(FOG)",
+    "CPFM": "CPFM(Cactus Plant Flea Market)",
+    "ERD": "ERD(Enfants Riches Deprimes)",
+    "NB": "New Balance(NB)",
+    "YSL": "YSL(Yves Saint Laurent)",
+    "SLP": "SLP(Saint Laurent Paris)",
+    "CH": "Chrome Hearts",
+}
+
 #-------------------------------------------------------------------------------------#
+
+def expand_brand_acronyms(item_name):
+    """
+    Expand brand acronyms in item names while preserving context.
+    Uses word boundary matching to avoid partial replacements.
+    Works with any case: BLCG, blcg, Blcg, etc.
+    """
+    if not item_name:
+        return item_name
+    
+    expanded_name = item_name
+    
+    # Split into words for more precise matching
+    words = expanded_name.split()
+    
+    for i, word in enumerate(words):
+        # Remove common punctuation for matching but preserve it
+        clean_word = word.strip('.,!?()[]{}"\'-').upper()
+        
+        # Check if the clean word is an acronym we know
+        if clean_word in BRAND_ACRONYMS:
+            # Replace the word while preserving any punctuation
+            original_word = words[i]
+            start_punct = ""
+            end_punct = ""
+            
+            # Extract leading punctuation
+            for char in original_word:
+                if char.isalpha():
+                    break
+                start_punct += char
+            
+            # Extract trailing punctuation  
+            for char in reversed(original_word):
+                if char.isalpha():
+                    break
+                end_punct = char + end_punct
+            
+            # Get the expanded brand name
+            expanded_brand = BRAND_ACRONYMS[clean_word]
+            
+            # Preserve original case style if possible
+            original_letters = ''.join(c for c in original_word if c.isalpha())
+            if original_letters.islower():
+                # If original was all lowercase, make expanded brand lowercase except first letter
+                expanded_brand = expanded_brand[0].upper() + expanded_brand[1:].lower()
+            elif original_letters.isupper():
+                # If original was all uppercase, keep expanded brand as-is (title case)
+                pass  # Keep the title case from dictionary
+            else:
+                # Mixed case or title case, keep expanded brand as-is
+                pass
+            
+            # Replace with expanded form
+            words[i] = start_punct + expanded_brand + end_punct
+    
+    expanded_name = " ".join(words)
+    
+    # Log the expansion if it changed
+    if expanded_name != item_name:
+        print(f"🔄[ACRONYM] Expanded: '{item_name}' → '{expanded_name}'")
+    
+    return expanded_name
 
 def ask_gpt_for_titles(post_text, urls, retries=0): # function to ask GPT for product titles
     print("⬜️[SYSTEM] ChatGPT Called")
@@ -113,6 +191,7 @@ def ask_gpt_for_titles(post_text, urls, retries=0): # function to ask GPT for pr
         valid_items = []
         for item in named_urls:
             if isinstance(item, dict) and "url" in item and "name" in item:
+                item["name"] = expand_brand_acronyms(item["name"])
                 valid_items.append(item)
             else:
                 print(f"🟨[VALIDATION] Skipping invalid item: {item}")
