@@ -49,7 +49,7 @@ export default function Header() {
           ))}
         </div>
         <div className="hidden lg:flex lg:flex-1 lg:justify-end">
-          <Link href="https://reddit.com/r/QualityReps" target="_blank" rel="noopener noreferrer" className="text-sm font-semibold text-gray-900 hover:text-indigo-600">
+          <Link href="https://www.reddit.com/user/is3fiddy/" target="_blank" rel="noopener noreferrer" className="text-sm font-semibold text-gray-900 hover:text-indigo-600">
             Reddit →
           </Link>
         </div>

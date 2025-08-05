@@ -36,6 +36,14 @@ const Footer: React.FC = () => {
               FAQs
             </Link>
           </li>
+          <li>
+            <Link
+              href="/contact"
+              className="hover:underline me-6"
+            >
+              Contact
+            </Link>
+          </li>
         </ul>
 
         {/* Right side - Social icons */}
@@ -55,12 +63,12 @@ const Footer: React.FC = () => {
       {/* Bottom section with logo and copyright */}
       <div className="w-full mx-auto max-w-screen-xl px-6 pb-6 md:flex md:items-center md:justify-between">
         {/* Copyright */}
-        <span className="text-xs text-gray-500 mb-4 md:mb-0">
+        <span className="text-xs text-gray-500 mb-4">
           © {new Date().getFullYear()} W2Cai. All rights reserved.
         </span>
 
         {/* Center logo */}
-        <div className="flex justify-center mb-4 md:mb-0">
+        <div className="flex justify-center mb-4">
             <Image
                 alt="W2Cai Logo"
                 src="/w2cai_logo.svg"
