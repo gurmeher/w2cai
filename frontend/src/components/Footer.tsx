@@ -1,5 +1,6 @@
 import React from 'react';
 import Image from 'next/image';
+import Link from 'next/link';
 
 const Footer: React.FC = () => {
   return (
@@ -12,34 +13,34 @@ const Footer: React.FC = () => {
         {/* Left side - Navigation links */}
         <ul className="flex flex-wrap items-center text-sm text-gray-600">
           <li>
-            <a
+            <Link
               href="/"
               className="hover:underline me-6"
             >
               Home
-            </a>
+            </Link>
           </li>
           <li>
-            <a
+            <Link
               href="/search"
               className="hover:underline me-6"
             >
               Search
-            </a>
+            </Link>
           </li>
           <li>
-            <a
+            <Link
               href="/faqs"
               className="hover:underline me-6"
             >
               FAQs
-            </a>
+            </Link>
           </li>
         </ul>
 
         {/* Right side - Social icons */}
         <div className="flex items-center space-x-4">
-          {/* <a 
+          {/* <Link 
             href="#" 
             className="text-gray-600 hover:text-gray-800 transition-colors"
             aria-label="YouTube"
@@ -47,7 +48,7 @@ const Footer: React.FC = () => {
             <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
               <path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/>
             </svg>
-          </a> */}
+          </Link> */}
         </div>
       </div>
 
@@ -71,12 +72,12 @@ const Footer: React.FC = () => {
 
         {/* Right side links */}
         <div className="flex space-x-4 text-xs text-gray-500">
-          <a href="#" className="hover:underline">
+          <Link href="#" className="hover:underline">
             Terms of Service
-          </a>
-          <a href="#" className="hover:underline">
+          </Link>
+          <Link href="#" className="hover:underline">
             Privacy Policy
-          </a>
+          </Link>
         </div>
       </div>
     </footer>

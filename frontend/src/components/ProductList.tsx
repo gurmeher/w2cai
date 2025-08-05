@@ -2,7 +2,7 @@
 
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { supabase } from '@/lib/supabase';
 import ProductCard from './ProductCard';
 import SortDropdown, { SortOption } from './SortDropdown';
@@ -41,7 +41,7 @@ export default function ProductList({ searchTerm = '', defaultSort = 'popular', 
   const [sortOption, setSortOption] = useState<SortOption>(defaultSort);
   const pageSize = 20;
 
-  const loadItems = async (pageToLoad: number, reset = false) => {
+  const loadItems = useCallback(async (pageToLoad: number, reset = false) => {
     setLoading(true);
 
     const from = (pageToLoad - 1) * pageSize;
@@ -96,14 +96,14 @@ export default function ProductList({ searchTerm = '', defaultSort = 'popular', 
     }
 
     setLoading(false);
-  };
+  }, [searchTerm, sortOption]);
 
   useEffect(() => {
     setItems([]);
     setPage(1);
     setHasMore(true);
     loadItems(1, true);
-  }, [searchTerm, sortOption]);
+  }, [searchTerm, sortOption, loadItems]);
 
   const handleLoadMore = () => {
     const nextPage = page + 1;
