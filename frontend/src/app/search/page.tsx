@@ -23,7 +23,11 @@ export default function SearchPage() {
             Search
           </h1>
           <div className="mb-5">
-            <SearchBar onSearch={(term) => setSearchTerm(term)} />
+            <SearchBar 
+        searchTerm={searchTerm}
+        onSearch={setSearchTerm}
+        onReset={() => setSearchTerm('')}
+      />
           </div>
 
           <ProductList searchTerm={searchTerm} defaultSort="latest" />

@@ -1,31 +1,52 @@
+// SearchBar.tsx
+
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 type Props = {
   onSearch: (term: string) => void;
+  onReset: () => void;
+  searchTerm: string;
 };
 
-export default function SearchBar({ onSearch }: Props) {
-  const [searchTerm, setSearchTerm] = useState('');
+export default function SearchBar({ onSearch, onReset, searchTerm }: Props) {
+  const [inputValue, setInputValue] = useState(searchTerm);
+
+  useEffect(() => {
+    setInputValue(searchTerm);
+  }, [searchTerm]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    onSearch(searchTerm.trim());
+    onSearch(inputValue.trim());
+  };
+
+  const handleReset = () => {
+    setInputValue('');
+    onReset();
   };
 
   return (
-    <form
-      className="relative w-full max-w-4xl mx-auto"
-      onSubmit={handleSubmit}
-    >
+    <form className="relative w-full max-w-4xl mx-auto mb-4" onSubmit={handleSubmit}>
       <input
         type="text"
-        value={searchTerm}
-        onChange={(e) => setSearchTerm(e.target.value)}
+        value={inputValue}
+        onChange={(e) => setInputValue(e.target.value)}
         placeholder="What are you looking for?"
-        className="border-2 border-gray-300 px-5 py-5 pr-12 rounded-full w-full focus:outline-none bg-white hover:shadow transition-shadow text-gray-900"
+        className="border-2 border-gray-300 px-5 py-5 pr-32 rounded-full w-full focus:outline-none bg-white hover:shadow transition-shadow text-gray-900"
       />
+      
+      {inputValue && (
+        <button
+          type="button"
+          onClick={handleReset}
+          className="absolute right-18 top-1/2 -translate-y-1/2 text-gray-600 hover:text-gray-900 text-sm"
+        >
+          Reset
+        </button>
+      )}
+
       <button
         type="submit"
         className="cursor-pointer absolute right-2 top-1/2 -translate-y-1/2 bg-indigo-700 text-white rounded-full w-12 h-12 flex items-center justify-center hover:bg-indigo-900 transition-colors"
