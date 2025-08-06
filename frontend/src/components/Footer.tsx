@@ -79,11 +79,11 @@ const Footer: React.FC = () => {
         </div>
 
         {/* Right side links */}
-        <div className="flex space-x-4 text-xs text-gray-500">
-          <Link href="#" className="hover:underline">
+        <div className="flex space-x-4 text-xs text-gray-500 mb-4">
+          <Link href="/tos" className="hover:underline">
             Terms of Service
           </Link>
-          <Link href="#" className="hover:underline">
+          <Link href="/privacy" className="hover:underline">
             Privacy Policy
           </Link>
         </div>

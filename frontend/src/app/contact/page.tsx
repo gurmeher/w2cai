@@ -15,7 +15,7 @@ export default function ContactPage() {
         <Polygon2 />
 
         <div className="mx-auto max-w-6xl py-15 lg:py-25 text-left">
-          <h1 className="text-center mb-5 text-4xl font-bold tracking-tight text-gray-900 sm:text-5xl font-sans">
+          <h1 className="text-center mb-5 text-4xl font-bold tracking-tight text-gray-900 font-sans">
             Contact Us
           </h1>
             <p className="text-md font-md text-gray-800 sm:text-xl/8">
