@@ -41,7 +41,7 @@ export default function SearchBar({ onSearch, onReset, searchTerm }: Props) {
         <button
           type="button"
           onClick={handleReset}
-          className="absolute right-18 top-1/2 -translate-y-1/2 text-gray-600 hover:text-gray-900 text-sm"
+          className="cursor-pointer absolute right-18 top-1/2 -translate-y-1/2 text-gray-600 hover:text-gray-900 text-sm"
         >
           Reset
         </button>
