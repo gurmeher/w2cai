@@ -42,10 +42,18 @@ BRAND_ACRONYMS = {
     "FOG": "Fear of God(FOG)",
     "CPFM": "CPFM(Cactus Plant Flea Market)",
     "ERD": "ERD(Enfants Riches Deprimes)",
+    "3RD": "ERD(Enfants Riches Deprimes)",
     "NB": "New Balance(NB)",
     "YSL": "YSL(Yves Saint Laurent)",
     "SLP": "SLP(Saint Laurent Paris)",
     "CH": "Chrome Hearts",
+    "VD": "Vuja De",
+    "VTM": "Vetements",
+    "RO": "Rick Owens",
+    "AC": "Acne Studios",
+    "ACN": "Acne Studios",
+    "D&G": "Dolce & Gabbana",
+    "DG": "Dolce & Gabbana",
 }
 
 #-------------------------------------------------------------------------------------#
@@ -119,7 +127,8 @@ def ask_gpt_for_titles(post_text, urls, retries=0): # function to ask GPT for pr
         You are given the title and body of a Reddit post with links of product URLs. 
         Your task is to match each link to a meaningful name or product description. 
         If you cannot confidently match a name for a URL, exclude that URL entirely. Do not include it in the output.
-        Write the name in title capitalization format, ex: "Fear of God Pants and Hat"
+        Write the name in title capitalization format, ex: "Fear of God Pants and Hat".
+        Fix typos if obvious.
 
         Don't include terms such as "qc", "from weidian", "from taobao", "from 1688", "replica", "fake", "knockoff", "retail", "legit", any hate speech, and any terms similar.
         Don't include terms like "shirt", "pants", "hoodie", "shoes", "sneakers", "hoodie", "accessory" or any other generic clothing terms unless you're confident it is one. In this case, the item name itself is fine.
@@ -355,7 +364,9 @@ def get_recent_posts(subreddit_name="fashionreps", limit=100):
     print(f"\n⬜️⬜️⬜️[SYSTEM] \"get_recent_posts\" Called (for {subreddit_name}) - OPTIMIZED VERSION WITH PRICE SCRAPING\n")
     
     subreddit = reddit.subreddit(subreddit_name)
-    posts = list(subreddit.new(limit=limit))
+    posts = list(subreddit.top(time_filter="week", limit=limit)) # CHANGE THIS TO CHANGE POST RETRIEVAL METHOD 
+    #posts = list(subreddit.new(limit=limit))  <-- use this to get the newest posts
+    #posts = list(subreddit.top(time_filter="week", limit=limit)) <-- use this to get the top posts of the week
 
     # Batch check for existing permalinks
     permalinks_to_check = [f"https://www.reddit.com{post.permalink}" for post in posts]
@@ -398,5 +409,5 @@ def get_recent_posts(subreddit_name="fashionreps", limit=100):
 if __name__ == "__main__":
     # example usage with both subreddits
     for sub in ["fashionreps", "qualityreps"]:
-        get_recent_posts(sub, limit=50)  
+        get_recent_posts(sub, limit=1000)  
         time.sleep(2)  # Brief pause between subreddits
