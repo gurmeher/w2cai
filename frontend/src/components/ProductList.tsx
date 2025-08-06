@@ -167,7 +167,7 @@ export default function ProductList({ searchTerm = '', defaultSort = 'popular', 
       ) : items.length === 0 ? (
         <div className="flex justify-center items-center mt-10">
           <p className="text-gray-500">
-            No results found matching "{searchTerm}"
+            No results found matching &quot;{searchTerm}&quot;
           </p>
         </div>
       ) : (
