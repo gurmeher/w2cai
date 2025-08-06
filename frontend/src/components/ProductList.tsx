@@ -164,6 +164,12 @@ export default function ProductList({ searchTerm = '', defaultSort = 'popular', 
           </svg>
           <span className="sr-only">Loading...</span>
         </div>
+      ) : items.length === 0 ? (
+        <div className="flex justify-center items-center mt-10">
+          <p className="text-gray-500">
+            No results found matching "{searchTerm}"
+          </p>
+        </div>
       ) : (
         <>
           <div className="py-3 grid grid-cols-1 gap-5 mx-auto max-w-4xl">
