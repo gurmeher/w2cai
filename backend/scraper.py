@@ -341,7 +341,7 @@ def process_posts_in_batches(posts_to_process):
     # Process posts in batches
     for i in range(0, len(posts_to_process), BATCH_SIZE):
         batch = posts_to_process[i:i + BATCH_SIZE]
-        print(f"🔄[BATCH] Processing batch {i//BATCH_SIZE + 1} with {len(batch)} posts")
+        print(f"🔄[BATCH] Processing batch {i//BATCH_SIZE + 1} with {len(batch)} posts (Processed {total_processed})")
         
         # Process batch in parallel
         with ThreadPoolExecutor(max_workers=min(BATCH_SIZE, MAX_WORKERS)) as executor:
@@ -360,13 +360,19 @@ def process_posts_in_batches(posts_to_process):
     
     print(f"📊[FINAL] Successfully processed {total_processed} posts")
 
-def get_recent_posts(subreddit_name="fashionreps", limit=100):
+def get_recent_posts(subreddit_name="fashionreps", limit=100, searchquery=""):
     print(f"\n⬜️⬜️⬜️[SYSTEM] \"get_recent_posts\" Called (for {subreddit_name}) - OPTIMIZED VERSION WITH PRICE SCRAPING\n")
     
     subreddit = reddit.subreddit(subreddit_name)
-    posts = list(subreddit.top(time_filter="week", limit=limit)) # CHANGE THIS TO CHANGE POST RETRIEVAL METHOD 
+    posts = list(subreddit.search(query="", sort="new", limit=limit))
+    
+    #posts = list(subreddit.search(query="", sort="new", limit=limit)) # CHANGE THIS TO CHANGE POST RETRIEVAL METHOD 
     #posts = list(subreddit.new(limit=limit))  <-- use this to get the newest posts
     #posts = list(subreddit.top(time_filter="week", limit=limit)) <-- use this to get the top posts of the week
+    #posts = list(subreddit.top(time_filter="month", limit=limit))
+    #posts = list(subreddit.hot(limit=limit))
+    #posts = list(subreddit.rising(limit=limit))
+    #posts = list(subreddit.search(query="", sort="new", limit=limit)) <-- use this to search for specific keywords. limit is abt 250
 
     # Batch check for existing permalinks
     permalinks_to_check = [f"https://www.reddit.com{post.permalink}" for post in posts]
@@ -408,6 +414,6 @@ def get_recent_posts(subreddit_name="fashionreps", limit=100):
 
 if __name__ == "__main__":
     # example usage with both subreddits
-    for sub in ["fashionreps", "qualityreps"]:
-        get_recent_posts(sub, limit=1000)  
+    for sub in ["fashionreps", "qualityreps"]: #choose subreddits, limit will apply to each
+        get_recent_posts(sub, limit=1000) #using searchquery will typically limit 
         time.sleep(2)  # Brief pause between subreddits

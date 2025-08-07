@@ -79,7 +79,7 @@ def scrape_weidian_price(soup):
         print(f"🟥🟥🟥[PRICE-ERROR] Error extracting price: {e}")
         return None
 
-def scrape_weidian_image(soup):
+def scrape_weidian_image(soup, debugprinturl=""):
     """Extract image from Weidian product page using soup"""
     try:
         # Method 1: Look for pcitem pattern (original working pattern)
@@ -127,7 +127,7 @@ def scrape_weidian_image(soup):
                 print(f"🟪[IMAGE-SUCCESS] Found fallback geilicdn image: {clean_url}")
                 return clean_url
 
-        print(f"🟥🟥🟥[IMAGE-NOTFOUND] No suitable image found")
+        print(f"🟥🟥🟥[IMAGE-NOTFOUND] No suitable image found for: {debugprinturl}")
         return None
 
     except Exception as e:
@@ -155,7 +155,7 @@ def scrape_weidian_data(url):
         soup = BeautifulSoup(response.content, 'html.parser')
 
         # Extract image and price using the soup
-        image_url = scrape_weidian_image(soup)
+        image_url = scrape_weidian_image(soup, url)
         price = scrape_weidian_price(soup)
 
         return {
