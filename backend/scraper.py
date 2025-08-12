@@ -367,7 +367,7 @@ def get_recent_posts(subreddit_name="fashionreps", limit=100, searchquery=""):
     print(f"\n⬜️⬜️⬜️[SYSTEM] \"get_recent_posts\" Called (for {subreddit_name}) - OPTIMIZED VERSION WITH PRICE SCRAPING\n")
     
     subreddit = reddit.subreddit(subreddit_name)
-    posts = list(subreddit.search(query="acne", sort="new", limit=limit))
+    posts = list(subreddit.new(limit=limit))
 
     #posts = list(subreddit.search(query="", sort="new", limit=limit)) # CHANGE THIS TO CHANGE POST RETRIEVAL METHOD 
     #posts = list(subreddit.new(limit=limit))  <-- use this to get the newest posts

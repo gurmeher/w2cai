@@ -49,8 +49,8 @@ export default function Header() {
           ))}
         </div>
         <div className="hidden lg:flex lg:flex-1 lg:justify-end">
-          <Link href="https://www.reddit.com/user/is3fiddy/" target="_blank" rel="noopener noreferrer" className="text-sm font-semibold text-gray-900 hover:text-indigo-600">
-            Reddit →
+          <Link href="https://www.tiktok.com/@w2cai.com" target="_blank" rel="noopener noreferrer" className="text-sm font-semibold text-gray-900 hover:text-indigo-600">
+            Tiktok →
           </Link>
         </div>
       </nav>
