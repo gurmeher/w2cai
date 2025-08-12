@@ -94,12 +94,12 @@ export default function Header() {
               </div>
               <div className="py-6">
                 <Link
-                  href="https://www.reddit.com/user/is3fiddy/"
+                  href="https://www.tiktok.com/@w2cai.com"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="-mx-3 block rounded-lg px-3 py-2.5 text-base font-semibold text-gray-900 hover:bg-gray-50"
                 >
-                  Reddit →
+                  Tiktok →
                 </Link>
               </div>
             </div>

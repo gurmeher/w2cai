@@ -32,8 +32,8 @@ export default function Home() {
                 bg-gradient-to-r from-indigo-500 via-purple-500 to-indigo-600 animate-gradient-x">
                 Start searching
               </a>
-              <a href="https://www.reddit.com/user/is3fiddy/" className="text-sm/6 font-semibold text-gray-900">
-                Join the discussion <span aria-hidden="true">→</span>
+              <a href="/faqs" className="text-sm/6 font-semibold text-gray-900">
+                FAQs <span aria-hidden="true">→</span>
               </a>
             </div>
 
