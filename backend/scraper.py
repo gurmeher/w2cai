@@ -1,4 +1,4 @@
-#This file is scraper.py - Simple optimizations without new dependencies
+#This file is scraper.py - Enhanced with title comparison for duplicate items
 #current bottlenecks: cant read slideshow posts, cant read posts with no product links, and cant read agent links
 from imagescraper import scrape_product_data
 import praw # Python Reddit API Wrapper, a Python library that allows you to easily interact with Reddit's API, so we can read posts
@@ -6,11 +6,10 @@ import re # regular expressions for matching patterns in text, idk gpt said to u
 import time # time module for sleep functionality so we dont spam reddit
 from dotenv import load_dotenv # to load environment variables from a .env file
 import os # lets us access environment variables, pythons standard library for interacting with the operating system
-from db import save_post_with_items, get_existing_permalinks # NOT dragonball
+from db import save_post_with_items, get_existing_permalinks, get_existing_items_by_urls # NOT dragonball - ADDED get_existing_items_by_urls
 import openai
 import json #jason
 from concurrent.futures import ThreadPoolExecutor, as_completed
-import threading
 
 load_dotenv()
 
@@ -37,7 +36,7 @@ BRAND_ACRONYMS = {
     # Luxury Fashion Houses
     "BLCG": "Balenciaga",
     "LV": "Louis Vuitton(LV)",
-    "MM": "Maison Margiela(MM) ",
+    "MM": "Maison Margiela(MM)",
     "CDG": "CDG(Comme des Garcons)",
     "FOG": "Fear of God(FOG)",
     "CPFM": "CPFM(Cactus Plant Flea Market)",
@@ -57,6 +56,7 @@ BRAND_ACRONYMS = {
     "AJ": "Air Jordan",
     "VW": "Vivienne Westwood",
     "NN": "Number Nine",
+    "EE": "Eric Emanuel",
 }
 
 #-------------------------------------------------------------------------------------#
@@ -124,25 +124,40 @@ def expand_brand_acronyms(item_name):
     
     return expanded_name
 
-def ask_gpt_for_titles(post_text, urls, retries=0): # function to ask GPT for product titles
+def ask_gpt_for_titles(post_text, urls, existing_items=None, retries=0): # Enhanced function with existing items check
     print("⬜️[SYSTEM] ChatGPT Called")
+    
+    existing_context = ""
+    if existing_items:
+        existing_context = "\n\nEXISTING ITEMS IN DATABASE (for comparison):"
+        for item in existing_items:
+            existing_context += f'\n- URL: {item["product_url"]} | Prior Title: "{item.get("name") or ""}"'
+        existing_context += (
+            "\n\nFor any URL that appears above, you MUST compare your proposed new title with the prior title and "
+            "return the single BEST final title. Prefer the one that is clearer, more specific, and useful; "
+            "if each has complementary details, MERGE them into one concise title (<= 80 characters). "
+            "Avoid redundancy when merging. If the two titles describe different products, assume the new post is correct."
+        )
+
     prompt = f"""
-        You are given the title and body of a Reddit post with links of product URLs. 
-        Your task is to match each link to a meaningful name or product description. 
-        If you cannot confidently match a name for a URL, exclude that URL entirely. Do not include it in the output.
-        Write the name in title capitalization format, ex: "Fear of God Pants and Hat".
-        Fix typos if obvious.
+        You are given the title and body of a Reddit post with product links.
 
-        Don't include terms such as "qc", "from weidian", "from taobao", "from 1688", "replica", "fake", "knockoff", "retail", "legit", any hate speech, and any terms similar.
-        Don't include terms like "shirt", "pants", "hoodie", "shoes", "sneakers", "hoodie", "accessory" or any other generic clothing terms unless you're confident it is one. In this case, the item name itself is fine.
+        TASK
+        - For each URL, produce a clear, concise, human-friendly product name (Title Case).
+        - Fix obvious typos.
+        - Do NOT include terms like: qc, replica, fake, from weidian/taobao/1688, retail/legit, hate speech, etc.
+        - Do NOT use generic clothing words (shirt/pants/hoodie/shoes/accessory) unless you're confident they are correct.
+        - Keep titles <= 80 characters when reasonable.
+        - IMPORTANT: If the URL exists in the database (see section below), COMPARE the prior title with your new one and return a single best title. If both have complementary info, MERGE into one concise title. If they are clearly different items, use the new one.
 
-        IMPORTANT: Return ONLY valid JSON. No explanation, no markdown, no extra text. Just the JSON array.
-
-        Format:
+        OUTPUT
+        Return ONLY valid JSON (no extra text, no markdown). Format:
         [
         {{"url": "https://example.com/item1", "name": "Techwear Cargo Pants"}},
         {{"url": "https://example.com/item2", "name": "Jordan 1 Sneakers"}}
         ]
+
+        {existing_context}
 
         Reddit Post:
         {post_text}
@@ -183,8 +198,7 @@ def ask_gpt_for_titles(post_text, urls, retries=0): # function to ask GPT for pr
             print(f"🟨[JSON-CONTENT] Content was: {content}")
             
             # Try to extract JSON from response if GPT added extra text
-            import re
-            json_match = re.search(r'\[.*\]', content, re.DOTALL)
+            json_match = re.search(r'\[.*?\]', content, re.DOTALL)
             if json_match:
                 try:
                     named_urls = json.loads(json_match.group())
@@ -218,7 +232,7 @@ def ask_gpt_for_titles(post_text, urls, retries=0): # function to ask GPT for pr
         if retries < 2:  # Retry up to 2 times
             print(f"🟨[GPT-RETRY] GPT failed, retrying ({retries + 1}/2): {e}")
             time.sleep(2 ** retries)  # Exponential backoff
-            return ask_gpt_for_titles(post_text, urls, retries + 1)
+            return ask_gpt_for_titles(post_text, urls, existing_items, retries + 1)
         else:
             print(f"🟥🟥🟥[GPT-ERROR] GPT failed after retries: {e}")
             return []
@@ -247,7 +261,7 @@ def scrape_single_item_data(item):
 
 def scrape_data_parallel(named_urls):
     """Scrape images and prices in parallel using ThreadPoolExecutor"""
-    print(f"🖼️💰[DATA] Scraping {len(named_urls)} items (image + price) in parallel...")
+    #print(f"🖼️💰[DATA] Scraping {len(named_urls)} items (image + price) in parallel...")
     
     with ThreadPoolExecutor(max_workers=3) as executor:
         # Submit all data scraping tasks
@@ -317,25 +331,58 @@ def process_single_post(post_info):
         post_data = post_info["post_data"]
         full_text = post_info["full_text"]
         product_urls = post_info["product_urls"]
-        
-        named_urls = ask_gpt_for_titles(full_text, product_urls)
-        
+
+        # BEFORE: snapshot current DB titles for these URLs
+        existing_items = get_existing_items_by_urls(product_urls)
+        before_titles = {it["product_url"]: it.get("name") for it in existing_items}
+        #if existing_items:
+            #print(f"🔍[EXISTING] Found {len(existing_items)} existing items for comparison")
+
+        # GPT with existing items (enables compare/merge behavior in prompt)
+        named_urls = ask_gpt_for_titles(full_text, product_urls, existing_items)
         if not named_urls:
             print(f"🟨[NOURL-SKIPPED] No named URLs found for: {post_data['title']}")
             return False
-        
+
+        # Save (upsert)
         save_post_with_items(post_data, named_urls)
-        
-        # Log summary of what was saved
+
+        # AFTER: re-fetch titles for the URLs we just touched
+        touched_urls = [it["url"] for it in named_urls]
+        after_items = get_existing_items_by_urls(touched_urls)
+        after_titles = {it["product_url"]: it.get("name") for it in after_items}
+
+        # Print before → proposed → after (only when it changed, else annotate)
+        for it in named_urls:
+            url = it["url"]
+            prev = before_titles.get(url)
+            proposed = it.get("name")
+            final = after_titles.get(url)
+
+            if prev != final or proposed != final:
+                print(
+                    f"📝[TITLE-CHANGE] {url}\n"
+                    f"   before  : {repr(prev)}\n"
+                    f"   proposed: {repr(proposed)}\n"
+                    f"   after   : {repr(final)}"
+                )
+            else:
+                if url in before_titles:
+                    print(f"📝[TITLE-UNCHANGED] {url} stayed as {repr(final)}")
+                else:
+                    print(f"📝[TITLE-NEW] {url} inserted with {repr(final)}")
+
+        # Summary
         items_with_price = sum(1 for item in named_urls if item.get('price'))
         items_with_image = sum(1 for item in named_urls if item.get('image_url'))
         print(f"🟩🟩🟩[SUCCESS] Processed: {post_data['title']}")
         print(f"📊[SUMMARY] {len(named_urls)} items | {items_with_price} with prices | {items_with_image} with images\n")
         return True
-        
+
     except Exception as e:
         print(f"🟥🟥🟥[ERROR] Failed to process post: {e}\n")
         return False
+    
 
 def process_posts_in_batches(posts_to_process):
     """Process posts in parallel batches"""
@@ -364,7 +411,7 @@ def process_posts_in_batches(posts_to_process):
     print(f"📊[FINAL] Successfully processed {total_processed} posts")
 
 def get_recent_posts(subreddit_name="fashionreps", limit=100, searchquery=""):
-    print(f"\n⬜️⬜️⬜️[SYSTEM] \"get_recent_posts\" Called (for {subreddit_name}) - OPTIMIZED VERSION WITH PRICE SCRAPING\n")
+    print(f"\n⬜️⬜️⬜️[SYSTEM] \"get_recent_posts\" Called (for {subreddit_name})\n")
     
     subreddit = reddit.subreddit(subreddit_name)
     posts = list(subreddit.new(limit=limit))
@@ -385,7 +432,7 @@ def get_recent_posts(subreddit_name="fashionreps", limit=100, searchquery=""):
     posts_to_process = []
     skip_counts = {"DUPLICATE": 0, "FLAIR": 0, "NO-URLS": 0}
     
-    print("📋[PREP] Preparing posts data...")
+    #print("📋[PREP] Preparing posts data...")
     for postcount, post in enumerate(posts, 1):
         post_info, status = prepare_post_data(post, subreddit_name, existing_permalinks)
         
@@ -409,14 +456,14 @@ def get_recent_posts(subreddit_name="fashionreps", limit=100, searchquery=""):
     
     if posts_to_process:
         process_posts_in_batches(posts_to_process)
-    else:
-        print("📭[EMPTY] No posts to process")
+    #else:
+        #print("📭[EMPTY] No posts to process")
 
 #-------------------------------------------------------------------------------------#
 #ALTERNATING SUBREDDIT FUNCTION
 
 if __name__ == "__main__":
     # example usage with both subreddits
-    for sub in ["fashionreps", "qualityreps"]: #choose subreddits, limit will apply to each
-        get_recent_posts(sub, limit=1000) #using searchquery will typically limit 
+    for sub in ["fashionreps", ]: #choose subreddits, limit will apply to each
+        get_recent_posts(sub, limit=50) #using searchquery will typically limit to 1000
         time.sleep(2)  # Brief pause between subreddits

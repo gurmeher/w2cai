@@ -186,5 +186,27 @@ def get_existing_permalinks(permalinks):
     conn.close()
     return results
 
+def get_existing_items_by_urls(urls):
+    """Return existing items for any of the given URLs."""
+    if not urls:
+        return []
+    conn = get_connection()
+    cur = conn.cursor()
+    try:
+        cur.execute(
+            """
+            SELECT product_url, name
+            FROM items
+            WHERE product_url = ANY(%s)
+            """,
+            (urls,)
+        )
+        rows = cur.fetchall()
+        return [{"product_url": r[0], "name": r[1]} for r in rows]
+    finally:
+        cur.close()
+        conn.close()
+
+
 init_db()
 # This code initializes the database and defines functions to save posts, isn't really needed after the first run but ig we can keep it for now
