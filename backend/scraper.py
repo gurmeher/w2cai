@@ -62,11 +62,6 @@ BRAND_ACRONYMS = {
 #-------------------------------------------------------------------------------------#
 
 def expand_brand_acronyms(item_name):
-    """
-    Expand brand acronyms in item names while preserving context.
-    Uses word boundary matching to avoid partial replacements.
-    Works with any case: BLCG, blcg, Blcg, etc.
-    """
     if not item_name:
         return item_name
     
@@ -134,9 +129,9 @@ def ask_gpt_for_titles(post_text, urls, existing_items=None, retries=0): # Enhan
             existing_context += f'\n- URL: {item["product_url"]} | Prior Title: "{item.get("name") or ""}"'
         existing_context += (
             "\n\nFor any URL that appears above, you MUST compare your proposed new title with the prior title and "
-            "return the single BEST final title. Prefer the one that is clearer, more specific, and useful; "
-            "if each has complementary details, MERGE them into one concise title (<= 80 characters). "
-            "Avoid redundancy when merging. If the two titles describe different products, assume the new post is correct."
+            "return the single BEST final title. Prefer the one that is more useful; "
+            "if each has complementary details, MERGE them into one concise title (<= 80 characters). It is often that one item has multiple garments from the same brand, such as Stussy Pants and Shirts. "
+            "Avoid redundancy when merging. If the two titles describe different products and/or brands, assume the new post is correct."
         )
 
     prompt = f"""
@@ -465,5 +460,5 @@ def get_recent_posts(subreddit_name="fashionreps", limit=100, searchquery=""):
 if __name__ == "__main__":
     # example usage with both subreddits
     for sub in ["fashionreps", ]: #choose subreddits, limit will apply to each
-        get_recent_posts(sub, limit=50) #using searchquery will typically limit to 1000
+        get_recent_posts(sub, limit=1000) #using searchquery will typically limit to 1000
         time.sleep(2)  # Brief pause between subreddits
