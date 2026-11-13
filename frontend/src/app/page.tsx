@@ -25,6 +25,13 @@ export default function Home() {
     dateRange !== 'all' && DATE_OPTIONS.find((o) => o.value === dateRange)?.label,
   ].filter(Boolean);
 
+  // While a search is active the heading folds away and the search bar moves up under the nav
+  const searching = searchTerm !== '';
+  const handleSearch = (term: string) => {
+    setSearchTerm(term);
+    if (term) window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
   const clearFilters = () => {
     setSort('popular');
     setCategory('all');
@@ -39,8 +46,21 @@ export default function Home() {
         <Polygon2 />
 
         <div className="mx-auto max-w-4xl pb-20">
-          {/* Hero sits centered in the first ~70% of the screen (like cal.com); cards peek in below */}
-          <section className="flex min-h-[72svh] flex-col justify-center pt-20 sm:pt-28">
+          {/* Hero sits centered in the first ~70% of the screen (like cal.com); cards peek in below.
+              While searching it shrinks to just the search bar. */}
+          <section
+            className={`flex flex-col justify-center transition-[min-height,padding] duration-300 ease-[cubic-bezier(0.25,1,0.5,1)] motion-reduce:transition-none ${
+              searching ? 'min-h-0 pt-10 sm:pt-10' : 'min-h-[72svh] pt-20 sm:pt-28'
+            }`}
+          >
+          {/* Heading + subheading fold away (height and opacity) while searching */}
+          <div
+            inert={searching}
+            className={`grid transition-[grid-template-rows,opacity] duration-300 ease-[cubic-bezier(0.25,1,0.5,1)] motion-reduce:transition-none ${
+              searching ? 'grid-rows-[0fr] opacity-0' : 'grid-rows-[1fr] opacity-100'
+            }`}
+          >
+          <div className="min-h-0 [overflow-y:clip]">
           <h1 className="text-center text-[2rem] sm:text-[3.25rem] lg:-mx-32 lg:text-[4.25rem] font-bold tracking-tighter leading-[1.12] text-gray-900 font-sans">
             <span className="block text-balance">The faster way <RedditTile /> to source</span>
             <span className="block text-balance">
@@ -57,10 +77,12 @@ export default function Home() {
           <p className="mt-4 mb-10 text-center font-[Arial,Helvetica,sans-serif] text-base font-normal text-gray-500 sm:text-lg">
             Search the finds everyone’s already talking about
           </p>
+          </div>
+          </div>
 
           <SearchBar
             searchTerm={searchTerm}
-            onSearch={setSearchTerm}
+            onSearch={handleSearch}
             onReset={() => setSearchTerm('')}
           >
             <SearchFilters
