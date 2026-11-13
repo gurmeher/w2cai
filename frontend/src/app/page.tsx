@@ -50,7 +50,7 @@ export default function Home() {
               While searching it shrinks to just the search bar. */}
           <section
             className={`flex flex-col justify-center transition-[min-height,padding] duration-300 ease-[cubic-bezier(0.25,1,0.5,1)] motion-reduce:transition-none ${
-              searching ? 'min-h-0 pt-10 sm:min-h-0 sm:pt-10' : 'min-h-[60svh] pt-12 sm:min-h-[72svh] sm:pt-28'
+              searching ? 'min-h-0 pt-10 sm:min-h-0 sm:pt-10' : 'min-h-[60svh] pt-32 sm:min-h-[72svh] sm:pt-28'
             }`}
           >
           {/* Heading + subheading fold away (height and opacity) while searching */}
