@@ -139,9 +139,9 @@ export default function ProductList({ searchTerm = '', sortOption = 'popular', c
         <div className="py-3 grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-5 mx-auto max-w-4xl" role="status">
           <span className="sr-only">Loading...</span>
           {Array.from({ length: 6 }, (_, i) => (
-            <div key={i} className="rounded-2xl bg-white p-2 ring-1 ring-black/5 shadow-[0_8px_30px_rgba(0,0,0,0.06)]">
+            <div key={i} className="rounded-xl bg-white p-2 ring-1 ring-black/5 shadow-[0_8px_30px_rgba(0,0,0,0.06)]">
               <div
-                className="aspect-square rounded-xl bg-gradient-to-br from-glow-start/20 to-glow-end/20 animate-pulse"
+                className="aspect-square rounded-lg bg-gray-100 animate-pulse"
                 style={{ animationDelay: `${i * 150}ms` }}
               />
               <div className="mx-2 mt-3 h-3.5 w-3/4 rounded-full bg-black/5 animate-pulse" style={{ animationDelay: `${i * 150}ms` }} />
@@ -173,15 +173,18 @@ export default function ProductList({ searchTerm = '', sortOption = 'popular', c
           </div>
 
           {hasMore && (
-            <div className="mt-4 flex justify-center">
+            <div className="mt-8 flex justify-center">
+              {/* Soft gray pill: faint top highlight and a light shadow, no blur */}
               <button
                 onClick={handleLoadMore}
                 disabled={loading}
-                className="cursor-pointer rounded-md shadow-xs bg-gray-200 hover:bg-gray-300 transition-colors px-12.5 py-3.5 
-                  text-md font-bold text-black focus-visible:outline-2 
-                  focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
+                className="h-11 cursor-pointer rounded-full bg-gray-100 px-8 text-sm font-semibold text-gray-900 transition-colors
+                  shadow-[inset_0_1px_0_rgba(255,255,255,0.5),0_1px_2px_rgba(0,0,0,0.06)]
+                  hover:bg-gray-200
+                  disabled:cursor-default disabled:text-gray-400
+                  focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gray-900"
               >
-                {loading ? 'Loading...' : 'See More'}
+                {loading ? 'Loading…' : 'See more'}
               </button>
             </div>
           )}

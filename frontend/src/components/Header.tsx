@@ -40,13 +40,13 @@ export default function Header() {
         </div>
         <div className="hidden lg:flex lg:gap-x-12">
           {navigation.map((item) => (
-            <Link key={item.name} href={item.href} className="text-sm font-semibold text-gray-900 hover:text-indigo-600">
+            <Link key={item.name} href={item.href} className="text-sm font-semibold text-gray-900 underline-offset-4 hover:underline">
               {item.name}
             </Link>
           ))}
         </div>
         <div className="hidden lg:flex lg:flex-1 lg:justify-end">
-          <Link href="https://www.tiktok.com/@w2cai.com" target="_blank" rel="noopener noreferrer" className="text-sm font-semibold text-gray-900 hover:text-indigo-600">
+          <Link href="https://www.tiktok.com/@w2cai.com" target="_blank" rel="noopener noreferrer" className="text-sm font-semibold text-gray-900 underline-offset-4 hover:underline">
             Tiktok →
           </Link>
         </div>

@@ -43,11 +43,11 @@ export default function ProductCard({ id, name, url, image_url, first_seen_utc, 
       <button
         type="button"
         onClick={() => dialogRef.current?.showModal()}
-        className="group cursor-pointer text-left rounded-2xl bg-white p-2 ring-1 ring-black/5
-          shadow-[0_8px_30px_rgba(0,0,0,0.06)] hover:shadow-[0_12px_40px_rgba(0,0,0,0.12)] hover:-translate-y-0.5 transition
+        className="group cursor-pointer text-left rounded-xl bg-white p-2 ring-1 ring-black/5
+          shadow-[0_8px_30px_rgba(0,0,0,0.06)] hover:shadow-[0_12px_40px_rgba(0,0,0,0.12)] transition-shadow
           focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
       >
-        <div className="relative aspect-square overflow-hidden rounded-xl bg-gradient-to-br from-glow-start/15 to-glow-end/15">
+        <div className="relative aspect-square overflow-hidden rounded-lg bg-gray-100">
           {image_url ? (
             <Image src={image_url} alt={name} fill sizes="(min-width: 768px) 280px, 50vw" className="object-cover" />
           ) : (
