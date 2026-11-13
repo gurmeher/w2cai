@@ -4,7 +4,6 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { useState } from 'react';
 import { Dialog, DialogPanel } from '@headlessui/react';
-// import { Bars3Icon, XMarkIcon } from '@heroicons/react/24/outline';
 
 const navigation = [
   { name: 'Home', href: '/' },
@@ -37,7 +36,6 @@ export default function Header() {
             className="-m-2.5 inline-flex items-center justify-center rounded-md p-2.5 text-gray-700"
           >
             <span className="sr-only">Open main menu</span>
-            {/* <Bars3Icon className="h-6 w-6" aria-hidden="true" /> */}
             ☰
           </button>
         </div>
@@ -75,7 +73,6 @@ export default function Header() {
               className="-m-2.5 rounded-md p-2.5 text-gray-700"
             >
               <span className="sr-only">Close menu</span>
-              {/* <XMarkIcon className="h-6 w-6" aria-hidden="true" /> */}
               ✕
             </button>
           </div>

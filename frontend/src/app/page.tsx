@@ -37,7 +37,6 @@ export default function Home() {
               </a>
             </div>
 
-          {/* <SearchBar onResults={setItems} /> */}
           <h2 className="text-2xl font-bold mt-20 text-gray-900">
             Popular Products
           </h2>

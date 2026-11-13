@@ -72,11 +72,6 @@ const ProductModal = forwardRef<HTMLDialogElement, ProductModalProps>(
             </div>
           )}
 
-          {/* Title
-          <h2 className="mb-2 text-xl lg:text-2xl font-bold text-gray-800">
-            {name}
-          </h2> */}
-
           <div>
             {price != null ? (
               <div className="inline-block text-xl lg:text-xl font-bold tracking-tight text-gray-800 bg-purple-100 px-3 py-1 rounded-md mb-3">
@@ -146,16 +141,6 @@ const ProductModal = forwardRef<HTMLDialogElement, ProductModalProps>(
             </div>
 
           <div className="mt-6 flex gap-3">
-            {/*<a
-              href={url}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="cursor-pointer rounded-md shadow-xs bg-indigo-600 hover:bg-indigo-800 transition-colors px-3.5 py-2.5 
-                text-sm font-bold text-white focus-visible:outline-2 
-                focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
-            >
-              Visit Product
-            </a> */}
             <button
               onClick={closeModal}
               className="cursor-pointer rounded-md shadow-xs bg-gray-200 hover:bg-gray-300 transition-colors px-3.5 py-2.5 

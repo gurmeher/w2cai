@@ -1,4 +1,8 @@
-#This file is db.py
+# db.py
+# Creates and updates the tables on import (init_db); saves a post with its items,
+# and checks which posts and items already exist.
+# Talks to: Postgres directly via SUPABASE_URL (psycopg2). Called by scraper.py.
+# Tables: items, posts, and the post_item_links join table (many-to-many).
 import os #lets us access environment variables
 import psycopg2 # PostgreSQL database adapter for Python
 from dotenv import load_dotenv # to load environment variables from a .env file
@@ -140,38 +144,6 @@ def save_post_with_items(post, product_urls):
     finally:
         cur.close()
         conn.close()
-
-def fetch_items_with_posts():
-    conn = get_connection()
-    cur = conn.cursor()
-    cur.execute('''
-        SELECT i.id, i.product_url, i.name, i.image_url, i.price, p.id, p.title, p.permalink, p.upvotes
-        FROM items i
-        JOIN post_item_links pil ON i.id = pil.item_id
-        JOIN posts p ON p.id = pil.post_id
-        ORDER BY i.id, p.upvotes DESC
-    ''')
-    rows = cur.fetchall()
-    cur.close()
-    conn.close()
-
-    result = {}
-    for item_id, product_url, name, image_url, price, post_id, title, permalink, upvotes in rows:
-        if item_id not in result:
-            result[item_id] = {
-                "product_url": product_url,
-                "name": name,
-                "image_url": image_url,
-                "price": float(price) if price else None,
-                "posts": []
-            }
-        result[item_id]["posts"].append({
-            "id": post_id,
-            "title": title,
-            "permalink": f"https://reddit.com{permalink}",
-            "upvotes": upvotes
-        })
-    return list(result.values())
 
 def get_existing_permalinks(permalinks):
     import psycopg2

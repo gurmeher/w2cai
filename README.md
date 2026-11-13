@@ -108,7 +108,7 @@ Open http://localhost:3000 to view. The app is scaffolded and includes Supabase 
 - Run scraper in a scheduled job (e.g., cron, GitHub Actions, serverless cron)
 - Add request retry and backoff for scraping
 - Cache or store fetched images if hotlinking is undesirable
-- Add API endpoints (FastAPI is already listed in requirements) to serve items to the frontend
+- Add API endpoints (e.g. FastAPI) to serve items to the frontend
 - Implement observability (logging, error capture)
 
 ## License

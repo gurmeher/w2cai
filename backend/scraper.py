@@ -1,14 +1,21 @@
-#This file is scraper.py - Enhanced with title comparison for duplicate items
-#current bottlenecks: cant read slideshow posts, cant read posts with no product links, and cant read agent links
+# scraper.py
+# Entry point (`python scraper.py`). Pulls new posts from Reddit, filters by flair,
+# extracts product links, calls GPT for titles, expands brand acronyms, and runs
+# posts in parallel.
+# Talks to: Reddit API (praw), OpenAI, imagescraper.py, db.py
+# See backend/README.md for the full flow of one post.
+#
+# Current bottlenecks: can't read slideshow posts, can't read posts with no product
+# links, and can't read agent links.
 from imagescraper import scrape_product_data
 import praw # Python Reddit API Wrapper, a Python library that allows you to easily interact with Reddit's API, so we can read posts
 import re # regular expressions for matching patterns in text, idk gpt said to use it
 import time # time module for sleep functionality so we dont spam reddit
 from dotenv import load_dotenv # to load environment variables from a .env file
 import os # lets us access environment variables, pythons standard library for interacting with the operating system
-from db import save_post_with_items, get_existing_permalinks, get_existing_items_by_urls # NOT dragonball - ADDED get_existing_items_by_urls
+from db import save_post_with_items, get_existing_permalinks, get_existing_items_by_urls
 import openai
-import json #jason
+import json
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from urllib.parse import urlparse
 
@@ -436,19 +443,11 @@ def process_posts_in_batches(posts_to_process):
     
     print(f"📊[FINAL] Successfully processed {total_processed} posts")
 
-def get_recent_posts(subreddit_name="fashionreps", limit=100, searchquery=""):
+def get_recent_posts(subreddit_name="fashionreps", limit=100):
     print(f"\n⬜️⬜️⬜️[SYSTEM] \"get_recent_posts\" Called (for {subreddit_name})\n")
-    
+
     subreddit = reddit.subreddit(subreddit_name)
     posts = list(subreddit.new(limit=limit))
-
-    #posts = list(subreddit.search(query="", sort="new", limit=limit)) # CHANGE THIS TO CHANGE POST RETRIEVAL METHOD 
-    #posts = list(subreddit.new(limit=limit))  <-- use this to get the newest posts
-    #posts = list(subreddit.top(time_filter="week", limit=limit)) <-- use this to get the top posts of the week
-    #posts = list(subreddit.top(time_filter="month", limit=limit))
-    #posts = list(subreddit.hot(limit=limit))
-    #posts = list(subreddit.rising(limit=limit))
-    #posts = list(subreddit.search(query="", sort="new", limit=limit)) <-- use this to search for specific keywords. limit is abt 250
 
     # Batch check for existing permalinks
     permalinks_to_check = [f"https://www.reddit.com{post.permalink}" for post in posts]
@@ -457,8 +456,7 @@ def get_recent_posts(subreddit_name="fashionreps", limit=100, searchquery=""):
     # Prepare all posts data first
     posts_to_process = []
     skip_counts = {"DUPLICATE": 0, "FLAIR": 0, "NO-URLS": 0}
-    
-    #print("📋[PREP] Preparing posts data...")
+
     for postcount, post in enumerate(posts, 1):
         post_info, status = prepare_post_data(post, subreddit_name, existing_permalinks)
         
@@ -482,8 +480,6 @@ def get_recent_posts(subreddit_name="fashionreps", limit=100, searchquery=""):
     
     if posts_to_process:
         process_posts_in_batches(posts_to_process)
-    #else:
-        #print("📭[EMPTY] No posts to process")
 
 #-------------------------------------------------------------------------------------#
 #ALTERNATING SUBREDDIT FUNCTION
@@ -491,5 +487,5 @@ def get_recent_posts(subreddit_name="fashionreps", limit=100, searchquery=""):
 if __name__ == "__main__":
     # example usage with both subreddits
     for sub in ["fashionreps", ]: #choose subreddits, limit will apply to each
-        get_recent_posts(sub, limit=1000) #using searchquery will typically limit to 1000
+        get_recent_posts(sub, limit=1000)
         time.sleep(2)  # Brief pause between subreddits
