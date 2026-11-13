@@ -80,8 +80,12 @@ export default function SearchBar({ onSearch, onReset, searchTerm, children }: P
         <input
           type="text"
           value={inputValue}
-          onChange={(e) => setInputValue(e.target.value)}
+          onChange={(e) => {
+            setInputValue(e.target.value);
+            setOpen(true); // reopen the filters when typing again after a search
+          }}
           onFocus={() => setOpen(true)}
+          onClick={() => setOpen(true)} // also reopen when clicking a box that's already focused
           placeholder="What are you looking for?"
           aria-label="Search products"
           aria-expanded={expanded}
