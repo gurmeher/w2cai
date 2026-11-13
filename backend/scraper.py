@@ -314,14 +314,15 @@ def is_allowed_product_url(url):
     return host in ALLOWED_PRODUCT_HOSTS or host.endswith(ALLOWED_PRODUCT_HOST_SUFFIXES)
 
 def clean_categories(raw):
-    """Keep up to two known categories from GPT's answer, in order, without repeats; default ["Other"]"""
+    """Keep up to two known categories from GPT's answer, in order, without repeats; default ["Other"].
+    "Other" is only kept when nothing more specific was given."""
     if isinstance(raw, str):
         raw = [raw]
     if not isinstance(raw, list):
         return ["Other"]
     cleaned = []
     for c in raw:
-        if c in CATEGORIES and c not in cleaned:
+        if c in CATEGORIES and c != "Other" and c not in cleaned:
             cleaned.append(c)
     return cleaned[:2] or ["Other"]
 

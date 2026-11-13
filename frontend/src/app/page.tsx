@@ -41,7 +41,7 @@ export default function Home() {
         <div className="mx-auto max-w-4xl pb-20">
           {/* Hero sits centered in the first ~70% of the screen (like cal.com); cards peek in below */}
           <section className="flex min-h-[72svh] flex-col justify-center pt-20 sm:pt-28">
-          <h1 className="text-center text-[2.25rem] sm:text-[3.25rem] lg:-mx-32 lg:text-[4.25rem] font-bold tracking-tighter leading-[1.12] text-gray-900 font-sans">
+          <h1 className="text-center text-[2rem] sm:text-[3.25rem] lg:-mx-32 lg:text-[4.25rem] font-bold tracking-tighter leading-[1.12] text-gray-900 font-sans">
             <span className="block text-balance">The faster way <RedditTile /> to source</span>
             <span className="block text-balance">
               fashion{' '}
