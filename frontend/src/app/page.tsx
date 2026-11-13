@@ -50,7 +50,7 @@ export default function Home() {
               While searching it shrinks to just the search bar. */}
           <section
             className={`flex flex-col justify-center transition-[min-height,padding] duration-300 ease-[cubic-bezier(0.25,1,0.5,1)] motion-reduce:transition-none ${
-              searching ? 'min-h-0 pt-10 sm:pt-10' : 'min-h-[72svh] pt-20 sm:pt-28'
+              searching ? 'min-h-0 pt-10 sm:min-h-0 sm:pt-10' : 'min-h-[60svh] pt-12 sm:min-h-[72svh] sm:pt-28'
             }`}
           >
           {/* Heading + subheading fold away (height and opacity) while searching */}
@@ -61,7 +61,7 @@ export default function Home() {
             }`}
           >
           <div className="min-h-0 [overflow-y:clip]">
-          <h1 className="text-center text-[2rem] sm:text-[3.25rem] lg:-mx-32 lg:text-[4.25rem] font-bold tracking-tighter leading-[1.12] text-gray-900 font-sans">
+          <h1 className="text-center text-[2.625rem] leading-[1.08] sm:text-[3.25rem] sm:leading-[1.12] lg:-mx-32 lg:text-[4.25rem] font-bold tracking-tighter text-gray-900 font-sans">
             <span className="block text-balance">The faster way <RedditTile /> to source</span>
             <span className="block text-balance">
               fashion{' '}
@@ -74,7 +74,7 @@ export default function Home() {
             </span>
           </h1>
 
-          <p className="mt-4 mb-10 text-center font-[Arial,Helvetica,sans-serif] text-base font-normal text-gray-500 sm:text-lg">
+          <p className="mt-4 mb-8 text-center font-[Arial,Helvetica,sans-serif] text-[17px] leading-[1.4] text-balance font-normal text-gray-500 sm:mb-10 sm:text-lg">
             Search the finds everyone’s already talking about
           </p>
           </div>
