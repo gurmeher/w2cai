@@ -10,6 +10,7 @@ from db import save_post_with_items, get_existing_permalinks, get_existing_items
 import openai
 import json #jason
 from concurrent.futures import ThreadPoolExecutor, as_completed
+from urllib.parse import urlparse
 
 load_dotenv()
 
@@ -23,6 +24,13 @@ reddit = praw.Reddit(
 
 PRODUCT_URL_REGEX = r"(https?://(?:item\.taobao\.com|(?:[\w\-]+\.)*weidian\.com|x\.yupoo\.com|detail\.1688\.com)[^\s)\]]+)"
 # regex to match product links from Taobao, Weidian, Yupoo, and 1688
+# NOTE: the regex alone is not enough (it accepts "https://weidian.com@evil.com" or
+# "https://item.taobao.com.evil.com"), so every match is re-checked by is_allowed_product_url
+
+# Hosts must match one of these exactly...
+ALLOWED_PRODUCT_HOSTS = {"item.taobao.com", "weidian.com", "x.yupoo.com", "detail.1688.com"}
+# ...or be a subdomain of one of these (e.g. shop123.v.weidian.com)
+ALLOWED_PRODUCT_HOST_SUFFIXES = (".weidian.com",)
 
 # the useless flairs we want to skip (lowercase)
 SKIP_FLAIRS={"w2c", "shitpost", "guide", "news", 
@@ -209,9 +217,13 @@ def ask_gpt_for_titles(post_text, urls, existing_items=None, retries=0): # Enhan
             return []
         
         # Filter out invalid items
+        allowed_urls = set(urls)  # only URLs we extracted ourselves, never ones GPT made up or altered
         valid_items = []
         for item in named_urls:
             if isinstance(item, dict) and "url" in item and "name" in item:
+                if item["url"] not in allowed_urls:
+                    print(f"🟨[VALIDATION] Skipping URL not in post: {item['url']}")
+                    continue
                 item["name"] = expand_brand_acronyms(item["name"])
                 valid_items.append(item)
             else:
@@ -269,8 +281,27 @@ def scrape_data_parallel(named_urls):
             except Exception as e:
                 print(f"🟥🟥🟥[DATA-ERROR] Data scraping task failed: {e}")
 
+def is_allowed_product_url(url):
+    """True only if the URL's real host is an allowed marketplace and it has no user@ section"""
+    try:
+        parsed = urlparse(url)
+        host = parsed.hostname  # lowercased, with any user:pass@ and :port stripped
+        port = parsed.port      # raises ValueError on a malformed port
+    except ValueError:
+        return False
+
+    if parsed.scheme not in ("http", "https") or not host:
+        return False
+    if "@" in parsed.netloc or port is not None:  # e.g. https://weidian.com@evil.com
+        return False
+    return host in ALLOWED_PRODUCT_HOSTS or host.endswith(ALLOWED_PRODUCT_HOST_SUFFIXES)
+
 def extract_product_urls(text):
-    return list(set(re.findall(PRODUCT_URL_REGEX, text)))
+    urls = set(re.findall(PRODUCT_URL_REGEX, text))
+    allowed = [url for url in urls if is_allowed_product_url(url)]
+    for url in urls.difference(allowed):
+        print(f"🟨[URL-REJECTED] Host not allowed: {url}")
+    return allowed
 
 def prepare_post_data(post, subreddit_name, existing_permalinks):
     """Prepare post data, return None if should skip"""
