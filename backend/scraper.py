@@ -482,10 +482,25 @@ def get_recent_posts(subreddit_name="fashionreps", limit=100):
         process_posts_in_batches(posts_to_process)
 
 #-------------------------------------------------------------------------------------#
-#ALTERNATING SUBREDDIT FUNCTION
+# RUN SETTINGS (asked at startup)
+
+SUBREDDITS = ["fashionreps"]  # hardcoded for now; the post limit applies to each
+DEFAULT_POST_LIMIT = 1000
+MAX_POST_LIMIT = 1000  # Reddit's listings stop at about 1000 posts
+
+def ask_int(question, default, minimum, maximum):
+    """Ask for a whole number in [minimum, maximum]; pressing Enter uses the default"""
+    while True:
+        answer = input(f"{question} [{default}]: ").strip()
+        if not answer:
+            return default
+        if answer.isdigit() and minimum <= int(answer) <= maximum:
+            return int(answer)
+        print(f"Please enter a whole number from {minimum} to {maximum}.")
 
 if __name__ == "__main__":
-    # example usage with both subreddits
-    for sub in ["fashionreps", ]: #choose subreddits, limit will apply to each
-        get_recent_posts(sub, limit=1000)
+    limit = ask_int(f"How many recent posts to scan per subreddit ({', '.join(SUBREDDITS)})?",
+                    DEFAULT_POST_LIMIT, 1, MAX_POST_LIMIT)
+    for sub in SUBREDDITS:
+        get_recent_posts(sub, limit=limit)
         time.sleep(2)  # Brief pause between subreddits
