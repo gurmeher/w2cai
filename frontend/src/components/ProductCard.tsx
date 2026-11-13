@@ -20,75 +20,62 @@ export type ProductCardProps = {
   }[];
 };
 
+// "today", "3d ago", "5mo ago", "1y ago"
+function timeAgo(utcSeconds: number) {
+  const days = Math.floor((Date.now() - utcSeconds * 1000) / 86400000);
+  if (days < 1) return 'today';
+  if (days < 30) return `${days}d ago`;
+  if (days < 365) return `${Math.floor(days / 30)}mo ago`;
+  return `${Math.floor(days / 365)}y ago`;
+}
+
+const formatPrice = (price: number) =>
+  new Intl.NumberFormat('en-US', { style: 'currency', currency: 'CNY', currencyDisplay: 'narrowSymbol', minimumFractionDigits: 0 }).format(price);
+
 export default function ProductCard({ id, name, url, image_url, first_seen_utc, reddit_posts, price }: ProductCardProps) {
   const dialogRef = useRef<HTMLDialogElement>(null);
-  
-  const daysAgo = Math.floor((Date.now() - first_seen_utc * 1000) / 86400000);
-  const daysText = daysAgo === 1 ? "day" : "days";
-
-  const openModal = () => {
-    dialogRef.current?.showModal();
-  };
-
-  const subreddit = reddit_posts?.[0]?.subreddit;
-  const redditMentions = reddit_posts?.length ?? 0;
+  const mentions = reddit_posts?.length ?? 0;
+  const isNew = Date.now() - first_seen_utc * 1000 < 7 * 86400000;
 
   return (
     <>
-      <div className="border border-gray-200 bg-white rounded-2xl p-4 flex justify-between items-stretch shadow-sm hover:shadow-md transition-shadow">
-        {/* Left side: Name, subreddit, button */}
-        <div className="flex flex-col justify-between">
-          <div>
-            <h2 className="text-lg lg:text-xl font-bold text-black">{name}</h2>
-            {subreddit && (
-              <div className="mt-1 inline-block rounded-full bg-purple-100 text-gray-800 text-xs font-bold px-3 py-1">
-                🔗 {redditMentions} Reddit {redditMentions === 1 ? 'Mention' : 'Mentions'}
-              </div>
-            )}
-
-            {price != null ? (
-              <div className="mt-2 lg:mt-2 text-xl mb-2 lg:text-2xl font-bold tracking-tight text-gray-800">
-                {new Intl.NumberFormat('en-US', { style: 'currency', currency: 'CNY' }).format(price)}
-              </div>
-            ) : (
-              <div className="mt-2 lg:mt-4 text-sm mb-2 lg:text-lg font-medium text-gray-400 italic">
-                Price unavailable, see link or use agent
-              </div>
-            )}
-
-
-          </div>
-
-          <button
-            onClick={openModal}
-            className="mt-auto cursor-pointer rounded-md shadow-xs bg-indigo-600 hover:bg-indigo-800 transition-all px-3.5 py-2.5 w-25
-            text-sm font-bold text-white focus-visible:outline-2 
-            focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
-          >
-            See Info
-          </button>
-        </div>
-
-        {/* Right side: Days ago and image */}
-        <div className="flex flex-col items-end ml-4 flex-shrink-0">
-          <div className="text-gray-400 font-bold mb-2 whitespace-nowrap">
-            {daysAgo} {daysText} ago
-          </div>
+      {/* The whole card opens the details popup */}
+      <button
+        type="button"
+        onClick={() => dialogRef.current?.showModal()}
+        className="group cursor-pointer text-left rounded-2xl bg-white p-2 ring-1 ring-black/5
+          shadow-[0_8px_30px_rgba(0,0,0,0.06)] hover:shadow-[0_12px_40px_rgba(0,0,0,0.12)] hover:-translate-y-0.5 transition
+          focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
+      >
+        <div className="relative aspect-square overflow-hidden rounded-xl bg-gradient-to-br from-glow-start/15 to-glow-end/15">
           {image_url ? (
-            <Image
-              src={image_url}
-              alt={name}
-              className="w-30 h-30 lg:w-40 lg:h-40 object-cover rounded-lg border"
-              width={100}
-              height={100}
-            />
-          ) : ( 
-            <div className="w-30 h-30 lg:w-40 lg:h-40 rounded-lg border bg-white" />
+            <Image src={image_url} alt={name} fill sizes="(min-width: 768px) 280px, 50vw" className="object-cover" />
+          ) : (
+            <div className="flex h-full items-center justify-center text-4xl" aria-hidden="true">📦</div>
           )}
 
+          {isNew && (
+            <span className="absolute left-2 top-2 rounded-full bg-lime-300 px-2.5 py-1 text-[11px] font-black uppercase tracking-wide text-black">
+              New
+            </span>
+          )}
+          {mentions > 0 && (
+            <span className="absolute right-2 top-2 rounded-full bg-white/90 px-2.5 py-1 text-[11px] font-bold text-gray-900 backdrop-blur">
+              🔥 {mentions}
+            </span>
+          )}
         </div>
-      </div>
 
+        <div className="px-2 pb-2 pt-3">
+          <h2 className="line-clamp-2 text-[15px] font-semibold leading-snug text-gray-900">{name}</h2>
+          <div className="mt-2 flex items-center justify-between gap-2">
+            <span className={price != null ? 'text-lg font-extrabold tracking-tight text-gray-900' : 'text-sm font-medium text-gray-400'}>
+              {price != null ? formatPrice(price) : 'Price TBD'}
+            </span>
+            <span className="text-xs font-medium text-gray-400">{timeAgo(first_seen_utc)}</span>
+          </div>
+        </div>
+      </button>
 
       <ProductModal
         ref={dialogRef}

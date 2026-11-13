@@ -8,7 +8,7 @@ contract between the two.
 See the root [README](../README.md) for setup and environment variables.
 
 When you run `python scraper.py` it asks how many recent posts to scan (press Enter for
-1000, Reddit's maximum). The subreddit list is set in `SUBREDDITS` in `scraper.py`.
+300; Reddit's maximum is 1000). The subreddit list is set in `SUBREDDITS` in `scraper.py`.
 
 ## Files
 

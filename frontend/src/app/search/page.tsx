@@ -1,39 +1,6 @@
-'use client'
+import { redirect } from 'next/navigation';
 
-import { useState } from 'react';
-import Header from '@/components/Header';
-import Polygon1 from '@/components/Polygon1';
-import Polygon2 from '@/components/Polygon2';
-import SearchBar from '@/components/SearchBar';
-import ProductList from '@/components/ProductList';
-import Footer from '@/components/Footer';
-
+// Search now lives on the home page; keep old /search links working
 export default function SearchPage() {
-  const [searchTerm, setSearchTerm] = useState('');
-
-  return (
-    <div className="bg-white min-h-screen">
-      <Header />
-      <div className="relative isolate px-6 pt-12 lg:px-8">
-        <Polygon1 />
-        <Polygon2 />
-
-        <div className="mx-auto max-w-4xl py-15 lg:py-25 text-left">
-          <h1 className="text-center mb-5 text-4xl font-bold tracking-tight text-gray-900 font-sans">
-            Search
-          </h1>
-          <div className="mb-5">
-            <SearchBar 
-        searchTerm={searchTerm}
-        onSearch={setSearchTerm}
-        onReset={() => setSearchTerm('')}
-      />
-          </div>
-
-          <ProductList searchTerm={searchTerm} defaultSort="latest" />
-        </div>
-      </div>
-      <Footer />
-    </div>
-  );
+  redirect('/');
 }

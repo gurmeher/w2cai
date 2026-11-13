@@ -43,6 +43,9 @@ ALLOWED_PRODUCT_HOST_SUFFIXES = (".weidian.com",)
 SKIP_FLAIRS={"w2c", "shitpost", "guide", "news", 
              "presale", "lc", "announcement", "interest check"}
 
+# Product types GPT must choose from (keep in sync with frontend/src/lib/filters.ts)
+CATEGORIES = ["Shirts", "Pants", "Shorts", "Outerwear", "Shoes", "Accessories", "Other"]
+
 # Configuration
 BATCH_SIZE = 5 # Number of posts to process in parallel
 MAX_WORKERS = 5  # Thread pool size
@@ -158,13 +161,19 @@ def ask_gpt_for_titles(post_text, urls, existing_items=None, retries=0): # Enhan
         - Do NOT include terms like: qc, replica, fake, from weidian/taobao/1688, retail/legit, hate speech, etc.
         - Do NOT use generic clothing words (shirt/pants/hoodie/shoes/accessory) unless you're confident they are correct.
         - Keep titles <= 80 characters when reasonable.
+        - For each URL also pick its categories from this list: {", ".join(CATEGORIES)}.
+          Usually one category; give TWO only if the link clearly sells two types (e.g. a hoodie + pants set,
+          or a link with both shirts and shorts). Never more than two.
+          "Shirts" covers t-shirts, polos, long sleeves, button-ups, jerseys and tanks.
+          "Outerwear" covers hoodies, sweaters, jackets and coats. Use ["Other"] if unsure or none fit.
         - IMPORTANT: If the URL exists in the database (see section below), COMPARE the prior title with your new one and return a single best title. If both have complementary info, MERGE into one concise title. If they are clearly different items, use the new one.
 
         OUTPUT
         Return ONLY valid JSON (no extra text, no markdown). Format:
         [
-        {{"url": "https://example.com/item1", "name": "Techwear Cargo Pants"}},
-        {{"url": "https://example.com/item2", "name": "Jordan 1 Sneakers"}}
+        {{"url": "https://example.com/item1", "name": "Techwear Cargo Pants", "categories": ["Pants"]}},
+        {{"url": "https://example.com/item2", "name": "Jordan 1 Sneakers", "categories": ["Shoes"]}},
+        {{"url": "https://example.com/item3", "name": "Essentials Hoodie & Sweatpants Set", "categories": ["Outerwear", "Pants"]}}
         ]
 
         {existing_context}
@@ -232,6 +241,7 @@ def ask_gpt_for_titles(post_text, urls, existing_items=None, retries=0): # Enhan
                     print(f"🟨[VALIDATION] Skipping URL not in post: {item['url']}")
                     continue
                 item["name"] = expand_brand_acronyms(item["name"])
+                item["categories"] = clean_categories(item.get("categories"))
                 valid_items.append(item)
             else:
                 print(f"🟨[VALIDATION] Skipping invalid item: {item}")
@@ -302,6 +312,18 @@ def is_allowed_product_url(url):
     if "@" in parsed.netloc or port is not None:  # e.g. https://weidian.com@evil.com
         return False
     return host in ALLOWED_PRODUCT_HOSTS or host.endswith(ALLOWED_PRODUCT_HOST_SUFFIXES)
+
+def clean_categories(raw):
+    """Keep up to two known categories from GPT's answer, in order, without repeats; default ["Other"]"""
+    if isinstance(raw, str):
+        raw = [raw]
+    if not isinstance(raw, list):
+        return ["Other"]
+    cleaned = []
+    for c in raw:
+        if c in CATEGORIES and c not in cleaned:
+            cleaned.append(c)
+    return cleaned[:2] or ["Other"]
 
 def extract_product_urls(text):
     urls = set(re.findall(PRODUCT_URL_REGEX, text))
@@ -485,7 +507,7 @@ def get_recent_posts(subreddit_name="fashionreps", limit=100):
 # RUN SETTINGS (asked at startup)
 
 SUBREDDITS = ["fashionreps"]  # hardcoded for now; the post limit applies to each
-DEFAULT_POST_LIMIT = 1000
+DEFAULT_POST_LIMIT = 300
 MAX_POST_LIMIT = 1000  # Reddit's listings stop at about 1000 posts
 
 def ask_int(question, default, minimum, maximum):

@@ -67,6 +67,13 @@ def init_db():
         ADD COLUMN IF NOT EXISTS price DECIMAL(10,2);
     ''')
 
+    # Product types (1-2 of Shirts, Pants, Shoes, ...), chosen by GPT in scraper.py
+    cur.execute('''
+        ALTER TABLE items
+        ADD COLUMN IF NOT EXISTS categories TEXT[];
+    ''')
+    cur.execute('CREATE INDEX IF NOT EXISTS items_categories_idx ON items USING GIN (categories);')
+
     conn.commit()
     cur.close()
     conn.close()
@@ -101,17 +108,19 @@ def save_post_with_items(post, product_urls):
             name = item.get("name", None)
             image_url = item.get("image_url", None)
             price = item.get("price", None)  # Get price from item
+            categories = item.get("categories", None)  # list, e.g. ["Outerwear", "Pants"]
 
             # Insert or retrieve item with price
             cur.execute('''
-                INSERT INTO items (product_url, name, first_seen_utc, image_url, price)
-                VALUES (%s, %s, %s, %s, %s)
+                INSERT INTO items (product_url, name, first_seen_utc, image_url, price, categories)
+                VALUES (%s, %s, %s, %s, %s, %s)
                 ON CONFLICT (product_url) DO UPDATE SET
                     name = COALESCE(EXCLUDED.name, items.name),
                     image_url = COALESCE(EXCLUDED.image_url, items.image_url),
-                    price = COALESCE(EXCLUDED.price, items.price)
+                    price = COALESCE(EXCLUDED.price, items.price),
+                    categories = COALESCE(EXCLUDED.categories, items.categories)
                 RETURNING id
-            ''', (url, name, post['created_utc'], image_url, price))
+            ''', (url, name, post['created_utc'], image_url, price, categories))
 
             item_id_row = cur.fetchone()
             if item_id_row is None:

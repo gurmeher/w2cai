@@ -13,6 +13,7 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
+
 export const metadata: Metadata = {
   title: "W2Cai",
   description: "Discover Trending Finds from Reddit. W2Cai uses AI to organize links from top subreddits, so you don’t have to rely on limited, manual spreadsheets.",

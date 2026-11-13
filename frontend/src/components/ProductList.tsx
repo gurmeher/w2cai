@@ -2,10 +2,10 @@
 
 'use client';
 
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import { supabase } from '@/lib/supabase';
 import ProductCard from './ProductCard';
-import SortDropdown, { SortOption } from './SortDropdown';
+import { DATE_RANGES, DateRange, SortOption } from '@/lib/filters';
 
 export type Item = {
   id: number;
@@ -27,25 +27,35 @@ export type Item = {
   }[];
 };
 
+// Filters are owned by the page (they're shown inside the search box)
 type ProductListProps = {
   searchTerm?: string;
-  defaultSort?: SortOption;
-  showSort?: boolean;
+  sortOption?: SortOption;
+  category?: string;      // 'all' or one of CATEGORIES
+  dateRange?: DateRange;  // 'all' or a DATE_RANGES value
 };
 
-export default function ProductList({ searchTerm = '', defaultSort = 'popular', showSort = true}: ProductListProps) {
+export default function ProductList({ searchTerm = '', sortOption = 'popular', category = 'all', dateRange = 'all' }: ProductListProps) {
   const [items, setItems] = useState<Item[]>([]);
   const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(false);
   const [hasMore, setHasMore] = useState(true);
-  const [sortOption, setSortOption] = useState<SortOption>(defaultSort);
   const pageSize = 20;
+  // Each load gets an id; responses from older loads are ignored so a slow
+  // earlier request can't overwrite results after the filters change
+  const latestRequest = useRef(0);
 
   const loadItems = useCallback(async (pageToLoad: number, reset = false) => {
+    const requestId = ++latestRequest.current;
     setLoading(true);
 
     const from = (pageToLoad - 1) * pageSize;
     const to = from + pageSize - 1;
+
+    // With a date range, use inner joins so only items with a post in that range come back
+    // (and only those in-range posts are listed on the item)
+    const days = DATE_RANGES.find((r) => r.value === dateRange)?.days ?? null;
+    const join = days ? '!inner' : '';
 
     let query = supabase
       .from('items')
@@ -57,8 +67,8 @@ export default function ProductList({ searchTerm = '', defaultSort = 'popular', 
         price,
         first_seen_utc,
         reddit_mentions,
-        post_item_links (
-          posts (
+        post_item_links${join} (
+          posts${join} (
             id,
             title,
             permalink,
@@ -68,6 +78,16 @@ export default function ProductList({ searchTerm = '', defaultSort = 'popular', 
           )
         )
       `);
+
+    if (days) {
+      const cutoff = Date.now() / 1000 - days * 86400;
+      query = query.gte('post_item_links.posts.created_utc', cutoff);
+    }
+
+    // Items can have up to two categories; match if either is the chosen one
+    if (category !== 'all') {
+      query = query.contains('categories', [category]);
+    }
 
     // Apply sorting
     if (sortOption === 'latest') {
@@ -85,6 +105,7 @@ export default function ProductList({ searchTerm = '', defaultSort = 'popular', 
     }
 
     const { data, error } = await query;
+    if (requestId !== latestRequest.current) return; // a newer load has started
 
     if (error) {
       console.error('Load error:', error);
@@ -92,18 +113,18 @@ export default function ProductList({ searchTerm = '', defaultSort = 'popular', 
       if (data.length < pageSize) {
         setHasMore(false);
       }
-      setItems(prev => reset ? data : [...prev, ...data]);
+      setItems(prev => (reset ? data : [...prev, ...data]) as Item[]);
     }
 
     setLoading(false);
-  }, [searchTerm, sortOption]);
+  }, [searchTerm, sortOption, category, dateRange]);
 
   useEffect(() => {
     setItems([]);
     setPage(1);
     setHasMore(true);
     loadItems(1, true);
-  }, [searchTerm, sortOption, loadItems]);
+  }, [loadItems]);
 
   const handleLoadMore = () => {
     const nextPage = page + 1;
@@ -111,68 +132,32 @@ export default function ProductList({ searchTerm = '', defaultSort = 'popular', 
     loadItems(nextPage);
   };
 
-  const handleSortChange = (newSortOption: SortOption) => {
-    setSortOption(newSortOption);
-  };
-
   return (
     <>
-      {showSort && (
-        <SortDropdown 
-          value={sortOption}
-          onChange={handleSortChange}
-          className="mb-2 mx-auto max-w-4xl"
-        />
-      )}
-
       {loading && page === 1 ? (
-        <div className="flex justify-center items-center mt-10" role="status">
-          <svg
-            aria-hidden="true"
-            className="w-12 h-12 text-gray-200 animate-spin dark:text-gray-400 fill-indigo-600"
-            viewBox="0 0 100 101"
-            fill="none"
-            xmlns="http://www.w3.org/2000/svg"
-          >
-            <path
-              d="M100 50.5908C100 78.2051 77.6142 100.591 50 100.591C22.3858 
-              100.591 0 78.2051 0 50.5908C0 22.9766 22.3858 0.59082 50 
-              0.59082C77.6142 0.59082 100 22.9766 100 
-              50.5908ZM9.08144 50.5908C9.08144 73.1895 27.4013 91.5094 50 
-              91.5094C72.5987 91.5094 90.9186 73.1895 90.9186 
-              50.5908C90.9186 27.9921 72.5987 9.67226 50 
-              9.67226C27.4013 9.67226 9.08144 27.9921 
-              9.08144 50.5908Z"
-              fill="currentColor"
-            />
-            <path
-              d="M93.9676 39.0409C96.393 38.4038 97.8624 35.9116 
-              97.0079 33.5539C95.2932 28.8227 92.871 
-              24.3692 89.8167 20.348C85.8452 15.1192 80.8826 
-              10.7238 75.2124 7.41289C69.5422 4.10194 63.2754 
-              1.94025 56.7698 1.05124C51.7666 0.367541 46.6976 
-              0.446843 41.7345 1.27873C39.2613 1.69328 37.813 
-              4.19778 38.4501 6.62326C39.0873 9.04874 41.5694 
-              10.4717 44.0505 10.1071C47.8511 9.54855 51.7191 
-              9.52689 55.5402 10.0491C60.8642 10.7766 65.9928 
-              12.5457 70.6331 15.2552C75.2735 17.9648 79.3347 
-              21.5619 82.5849 25.841C84.9175 28.9121 86.7997 
-              32.2913 88.1811 35.8758C89.083 38.2158 91.5421 
-              39.6781 93.9676 39.0409Z"
-              fill="currentFill"
-            />
-          </svg>
+        // Loading: skeleton cards shaped like the real ones, pulsing in a staggered wave
+        <div className="py-3 grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-5 mx-auto max-w-4xl" role="status">
           <span className="sr-only">Loading...</span>
+          {Array.from({ length: 6 }, (_, i) => (
+            <div key={i} className="rounded-2xl bg-white p-2 ring-1 ring-black/5 shadow-[0_8px_30px_rgba(0,0,0,0.06)]">
+              <div
+                className="aspect-square rounded-xl bg-gradient-to-br from-glow-start/20 to-glow-end/20 animate-pulse"
+                style={{ animationDelay: `${i * 150}ms` }}
+              />
+              <div className="mx-2 mt-3 h-3.5 w-3/4 rounded-full bg-black/5 animate-pulse" style={{ animationDelay: `${i * 150}ms` }} />
+              <div className="mx-2 mt-2 mb-2 h-4 w-1/3 rounded-full bg-black/5 animate-pulse" style={{ animationDelay: `${i * 150}ms` }} />
+            </div>
+          ))}
         </div>
       ) : items.length === 0 ? (
         <div className="flex justify-center items-center mt-10">
           <p className="text-gray-500">
-            No results found matching &quot;{searchTerm}&quot;
+            {searchTerm ? <>No results found matching &quot;{searchTerm}&quot;</> : 'Nothing here for these filters yet'}
           </p>
         </div>
       ) : (
         <>
-          <div className="py-3 grid grid-cols-1 gap-5 mx-auto max-w-4xl">
+          <div className="py-3 grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-5 mx-auto max-w-4xl">
             {items.map(item => (
               <ProductCard
                 key={item.id}

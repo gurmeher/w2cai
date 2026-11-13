@@ -26,7 +26,7 @@ const faqs: FAQItem[] = [
   },
   {
     question: 'What subreddits do you track?',
-    answer: 'Currently just r/fashionreps and r/qualityreps. Reach out on Reddit or email w2cai.com@gmail.com if you know a subreddit we should track!',
+    answer: 'A small set of fashion subreddits where people share finds and links. Reach out on Reddit or email w2cai.com@gmail.com if you know a subreddit we should track!',
   },
   {
     question: 'Why do I see some products without images or prices?',
