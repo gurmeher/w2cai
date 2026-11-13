@@ -1,15 +1,23 @@
-#This file is scraper.py - Enhanced with title comparison for duplicate items
-#current bottlenecks: cant read slideshow posts, cant read posts with no product links, and cant read agent links
+# scraper.py
+# Entry point (`python scraper.py`). Pulls new posts from Reddit, filters by flair,
+# extracts product links, calls GPT for titles, expands brand acronyms, and runs
+# posts in parallel.
+# Talks to: Reddit API (praw), OpenAI, imagescraper.py, db.py
+# See backend/README.md for the full flow of one post.
+#
+# Current bottlenecks: can't read slideshow posts, can't read posts with no product
+# links, and can't read agent links.
 from imagescraper import scrape_product_data
 import praw # Python Reddit API Wrapper, a Python library that allows you to easily interact with Reddit's API, so we can read posts
 import re # regular expressions for matching patterns in text, idk gpt said to use it
 import time # time module for sleep functionality so we dont spam reddit
 from dotenv import load_dotenv # to load environment variables from a .env file
 import os # lets us access environment variables, pythons standard library for interacting with the operating system
-from db import save_post_with_items, get_existing_permalinks, get_existing_items_by_urls # NOT dragonball - ADDED get_existing_items_by_urls
+from db import save_post_with_items, get_existing_permalinks, get_existing_items_by_urls
 import openai
-import json #jason
+import json
 from concurrent.futures import ThreadPoolExecutor, as_completed
+from urllib.parse import urlparse
 
 load_dotenv()
 
@@ -23,6 +31,13 @@ reddit = praw.Reddit(
 
 PRODUCT_URL_REGEX = r"(https?://(?:item\.taobao\.com|(?:[\w\-]+\.)*weidian\.com|x\.yupoo\.com|detail\.1688\.com)[^\s)\]]+)"
 # regex to match product links from Taobao, Weidian, Yupoo, and 1688
+# NOTE: the regex alone is not enough (it accepts "https://weidian.com@evil.com" or
+# "https://item.taobao.com.evil.com"), so every match is re-checked by is_allowed_product_url
+
+# Hosts must match one of these exactly...
+ALLOWED_PRODUCT_HOSTS = {"item.taobao.com", "weidian.com", "x.yupoo.com", "detail.1688.com"}
+# ...or be a subdomain of one of these (e.g. shop123.v.weidian.com)
+ALLOWED_PRODUCT_HOST_SUFFIXES = (".weidian.com",)
 
 # the useless flairs we want to skip (lowercase)
 SKIP_FLAIRS={"w2c", "shitpost", "guide", "news", 
@@ -209,9 +224,13 @@ def ask_gpt_for_titles(post_text, urls, existing_items=None, retries=0): # Enhan
             return []
         
         # Filter out invalid items
+        allowed_urls = set(urls)  # only URLs we extracted ourselves, never ones GPT made up or altered
         valid_items = []
         for item in named_urls:
             if isinstance(item, dict) and "url" in item and "name" in item:
+                if item["url"] not in allowed_urls:
+                    print(f"🟨[VALIDATION] Skipping URL not in post: {item['url']}")
+                    continue
                 item["name"] = expand_brand_acronyms(item["name"])
                 valid_items.append(item)
             else:
@@ -269,8 +288,27 @@ def scrape_data_parallel(named_urls):
             except Exception as e:
                 print(f"🟥🟥🟥[DATA-ERROR] Data scraping task failed: {e}")
 
+def is_allowed_product_url(url):
+    """True only if the URL's real host is an allowed marketplace and it has no user@ section"""
+    try:
+        parsed = urlparse(url)
+        host = parsed.hostname  # lowercased, with any user:pass@ and :port stripped
+        port = parsed.port      # raises ValueError on a malformed port
+    except ValueError:
+        return False
+
+    if parsed.scheme not in ("http", "https") or not host:
+        return False
+    if "@" in parsed.netloc or port is not None:  # e.g. https://weidian.com@evil.com
+        return False
+    return host in ALLOWED_PRODUCT_HOSTS or host.endswith(ALLOWED_PRODUCT_HOST_SUFFIXES)
+
 def extract_product_urls(text):
-    return list(set(re.findall(PRODUCT_URL_REGEX, text)))
+    urls = set(re.findall(PRODUCT_URL_REGEX, text))
+    allowed = [url for url in urls if is_allowed_product_url(url)]
+    for url in urls.difference(allowed):
+        print(f"🟨[URL-REJECTED] Host not allowed: {url}")
+    return allowed
 
 def prepare_post_data(post, subreddit_name, existing_permalinks):
     """Prepare post data, return None if should skip"""
@@ -405,19 +443,11 @@ def process_posts_in_batches(posts_to_process):
     
     print(f"📊[FINAL] Successfully processed {total_processed} posts")
 
-def get_recent_posts(subreddit_name="fashionreps", limit=100, searchquery=""):
+def get_recent_posts(subreddit_name="fashionreps", limit=100):
     print(f"\n⬜️⬜️⬜️[SYSTEM] \"get_recent_posts\" Called (for {subreddit_name})\n")
-    
+
     subreddit = reddit.subreddit(subreddit_name)
     posts = list(subreddit.new(limit=limit))
-
-    #posts = list(subreddit.search(query="", sort="new", limit=limit)) # CHANGE THIS TO CHANGE POST RETRIEVAL METHOD 
-    #posts = list(subreddit.new(limit=limit))  <-- use this to get the newest posts
-    #posts = list(subreddit.top(time_filter="week", limit=limit)) <-- use this to get the top posts of the week
-    #posts = list(subreddit.top(time_filter="month", limit=limit))
-    #posts = list(subreddit.hot(limit=limit))
-    #posts = list(subreddit.rising(limit=limit))
-    #posts = list(subreddit.search(query="", sort="new", limit=limit)) <-- use this to search for specific keywords. limit is abt 250
 
     # Batch check for existing permalinks
     permalinks_to_check = [f"https://www.reddit.com{post.permalink}" for post in posts]
@@ -426,8 +456,7 @@ def get_recent_posts(subreddit_name="fashionreps", limit=100, searchquery=""):
     # Prepare all posts data first
     posts_to_process = []
     skip_counts = {"DUPLICATE": 0, "FLAIR": 0, "NO-URLS": 0}
-    
-    #print("📋[PREP] Preparing posts data...")
+
     for postcount, post in enumerate(posts, 1):
         post_info, status = prepare_post_data(post, subreddit_name, existing_permalinks)
         
@@ -451,14 +480,27 @@ def get_recent_posts(subreddit_name="fashionreps", limit=100, searchquery=""):
     
     if posts_to_process:
         process_posts_in_batches(posts_to_process)
-    #else:
-        #print("📭[EMPTY] No posts to process")
 
 #-------------------------------------------------------------------------------------#
-#ALTERNATING SUBREDDIT FUNCTION
+# RUN SETTINGS (asked at startup)
+
+SUBREDDITS = ["fashionreps"]  # hardcoded for now; the post limit applies to each
+DEFAULT_POST_LIMIT = 1000
+MAX_POST_LIMIT = 1000  # Reddit's listings stop at about 1000 posts
+
+def ask_int(question, default, minimum, maximum):
+    """Ask for a whole number in [minimum, maximum]; pressing Enter uses the default"""
+    while True:
+        answer = input(f"{question} [{default}]: ").strip()
+        if not answer:
+            return default
+        if answer.isdigit() and minimum <= int(answer) <= maximum:
+            return int(answer)
+        print(f"Please enter a whole number from {minimum} to {maximum}.")
 
 if __name__ == "__main__":
-    # example usage with both subreddits
-    for sub in ["fashionreps", ]: #choose subreddits, limit will apply to each
-        get_recent_posts(sub, limit=1000) #using searchquery will typically limit to 1000
+    limit = ask_int(f"How many recent posts to scan per subreddit ({', '.join(SUBREDDITS)})?",
+                    DEFAULT_POST_LIMIT, 1, MAX_POST_LIMIT)
+    for sub in SUBREDDITS:
+        get_recent_posts(sub, limit=limit)
         time.sleep(2)  # Brief pause between subreddits

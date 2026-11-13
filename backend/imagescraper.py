@@ -1,4 +1,8 @@
-# This file is imagescraper.py - Enhanced with price scraping
+# imagescraper.py
+# Given one product URL, fetches the page and pulls out an image URL and price
+# (Weidian only; Taobao, 1688 and Yupoo are stubs that return nothing).
+# Talks to: Weidian product pages over HTTP. Called by scraper.py via scrape_product_data().
+# Run directly (`python imagescraper.py`) to test the scraper on a few example URLs.
 import requests
 from bs4 import BeautifulSoup
 import time
@@ -192,14 +196,6 @@ def scrape_yupoo_data(url):
     return {'image_url': None, 'price': None}
 
 #-------------------------------------------------------------------------------------#
-def scrape_product_image(url):
-    """
-    Legacy function - kept for backward compatibility
-    Returns just the image URL
-    """
-    data = scrape_product_data(url)
-    return data.get('image_url')
-
 def scrape_product_data(url):
     """
     Router function that scrapes both image and price based on URL domain
