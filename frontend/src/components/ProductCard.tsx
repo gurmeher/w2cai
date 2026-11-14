@@ -48,10 +48,11 @@ function Price({ price }: { price: number }) {
   );
 }
 
-// Chip and line color per status. Trending warm orange, New black, Steady neutral gray, Cooling off muted slate.
+// Chip and line color per status. Trending warm orange, Popular rose, New black, Steady neutral gray, Cooling off muted slate.
 const STATUS_STYLE: Record<ActivityStatus, { chip: string; line: string; arrow?: 'up' | 'down' }> = {
   Trending: { chip: 'bg-[#e8590c]/14 text-[#b8440a]', line: 'text-[#e8590c]', arrow: 'up' },
   New: { chip: 'bg-gray-900 text-white', line: 'text-gray-900' },
+  Popular: { chip: 'bg-[#e64980]/13 text-[#b02a5b]', line: 'text-[#e64980]' },
   Steady: { chip: 'bg-[#6b6f76]/14 text-[#45484e]', line: 'text-[#6b6f76]' },
   'Cooling off': { chip: 'bg-[#5b7083]/15 text-[#3d4f60]', line: 'text-[#5b7083]', arrow: 'down' },
 };

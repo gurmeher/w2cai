@@ -5,7 +5,10 @@
 const DAY = 86400;
 const MONTH = 30.44 * DAY;
 
-export type ActivityStatus = 'New' | 'Trending' | 'Cooling off' | 'Steady';
+export type ActivityStatus = 'New' | 'Trending' | 'Popular' | 'Cooling off' | 'Steady';
+
+// An item with at least this many posts in the past year, still posted in the last 30 days, is "Popular"
+const POPULAR_MIN_POSTS = 15;
 
 // Posts per month over the 12 months before the anchor, oldest first.
 // Returns null when there are no posts in that year (then no line is drawn).
@@ -18,10 +21,11 @@ export function monthlyCounts(dates: number[], anchor: number): number[] | null 
   return counts.some((c) => c > 0) ? counts : null;
 }
 
-// First matching rule wins: New → Trending → Cooling off → Steady. Null = no status shown.
+// First matching rule wins: New → Trending → Popular → Cooling off → Steady. Null = no status shown.
 // siteBoost = how much busier the whole site's last 30 days were than its usual month
 // (the scraper reads recent posts, so recent months are naturally fuller). An item is only
-// "Trending" if it picked up more than the site did overall.
+// "Trending" if it picked up more than the site did overall. Big items that are still being posted
+// but aren't speeding up are "Popular" rather than "Steady".
 export function activityStatus(dates: number[], anchor: number, siteBoost = 1): ActivityStatus | null {
   if (dates.length === 0) return null;
   const ages = dates.map((t) => anchor - t);
@@ -31,7 +35,10 @@ export function activityStatus(dates: number[], anchor: number, siteBoost = 1): 
 
   const last30 = inLast(30);
   const usualPerMonth = (inLast(365) - last30) / 11; // the year before this month
-  if (last30 >= 3 && last30 >= 2 * Math.max(1, siteBoost) * usualPerMonth) return 'Trending';
+  if (last30 >= 3 && last30 >= Math.max(1, siteBoost) * usualPerMonth) return 'Trending';
+
+  const newestAge = Math.min(...ages);
+  if (inLast(365) >= POPULAR_MIN_POSTS && newestAge < 30 * DAY) return 'Popular';
 
   if (dates.length >= 3 && inLast(90) === 0) return 'Cooling off';
   if (inLast(365) > 0) return 'Steady';
