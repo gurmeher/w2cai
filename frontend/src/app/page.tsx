@@ -45,11 +45,11 @@ export default function Home() {
         <Polygon1 />
         <Polygon2 />
 
-        <div className="mx-auto max-w-4xl pb-20">
+        <div className="pb-20">
           {/* Hero sits centered in the first ~70% of the screen (like cal.com); cards peek in below.
               While searching it shrinks to just the search bar. */}
           <section
-            className={`flex flex-col justify-center transition-[min-height,padding] duration-300 ease-[cubic-bezier(0.25,1,0.5,1)] motion-reduce:transition-none ${
+            className={`mx-auto flex max-w-4xl flex-col justify-center transition-[min-height,padding] duration-300 ease-[cubic-bezier(0.25,1,0.5,1)] motion-reduce:transition-none ${
               searching ? 'min-h-0 pt-10 sm:min-h-0 sm:pt-10' : 'min-h-[60svh] pt-32 sm:min-h-[72svh] sm:pt-28'
             }`}
           >
@@ -107,7 +107,10 @@ export default function Home() {
           </div>
           </section>
 
-          <ProductList searchTerm={searchTerm} sortOption={sort} category={category} dateRange={dateRange} />
+          {/* Results get a wider area than the hero, so bigger screens show more columns */}
+          <div className="mx-auto max-w-7xl">
+            <ProductList searchTerm={searchTerm} sortOption={sort} category={category} dateRange={dateRange} />
+          </div>
 
         </div>
 
