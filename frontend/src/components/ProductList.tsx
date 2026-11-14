@@ -41,6 +41,24 @@ export default function ProductList({ searchTerm = '', sortOption = 'popular', c
   const [loading, setLoading] = useState(false);
   const [hasMore, setHasMore] = useState(true);
   const pageSize = 20;
+
+  // Fetched once for the cards' activity: "now" (the newest post date in the database) and
+  // siteBoost (how much busier the site's last 30 days were than its usual month)
+  const [anchor, setAnchor] = useState<number | null>(null);
+  const [siteBoost, setSiteBoost] = useState(1);
+  useEffect(() => {
+    (async () => {
+      const { data } = await supabase.from('posts').select('created_utc').order('created_utc', { ascending: false }).limit(1);
+      // TODO before merging to dev/main: use today's real date (Date.now() / 1000) instead of the newest post
+      const now = data?.[0]?.created_utc ?? Date.now() / 1000;
+      setAnchor(now);
+      const countSince = async (days: number) =>
+        (await supabase.from('posts').select('id', { count: 'exact', head: true }).gte('created_utc', now - days * 86400)).count ?? 0;
+      const [last30, lastYear] = await Promise.all([countSince(30), countSince(365)]);
+      const usualPerMonth = (lastYear - last30) / 11;
+      if (usualPerMonth > 0) setSiteBoost(last30 / usualPerMonth);
+    })();
+  }, []);
   // Each load gets an id; responses from older loads are ignored so a slow
   // earlier request can't overwrite results after the filters change
   const latestRequest = useRef(0);
@@ -136,9 +154,9 @@ export default function ProductList({ searchTerm = '', sortOption = 'popular', c
     <>
       {loading && page === 1 ? (
         // Loading: skeleton cards shaped like the real ones, pulsing in a staggered wave
-        <div className="py-3 grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-5 mx-auto max-w-4xl" role="status">
+        <div className="py-3 grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 md:gap-6" role="status">
           <span className="sr-only">Loading...</span>
-          {Array.from({ length: 6 }, (_, i) => (
+          {Array.from({ length: 12 }, (_, i) => (
             <div key={i} className="rounded-xl bg-white p-2 ring-1 ring-black/5 shadow-[0_8px_30px_rgba(0,0,0,0.06)]">
               <div
                 className="aspect-square rounded-lg bg-gray-100 animate-pulse"
@@ -157,7 +175,7 @@ export default function ProductList({ searchTerm = '', sortOption = 'popular', c
         </div>
       ) : (
         <>
-          <div className="py-3 grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-5 mx-auto max-w-4xl">
+          <div className="py-3 grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 md:gap-6">
             {items.map(item => (
               <ProductCard
                 key={item.id}
@@ -168,6 +186,8 @@ export default function ProductList({ searchTerm = '', sortOption = 'popular', c
                 first_seen_utc={item.first_seen_utc}
                 reddit_posts={item.post_item_links?.flatMap(link => link.posts) ?? []}
                 price={item.price}
+                anchor={anchor}
+                siteBoost={siteBoost}
               />
             ))}
           </div>

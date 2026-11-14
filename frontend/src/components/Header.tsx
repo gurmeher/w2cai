@@ -1,7 +1,7 @@
 'use client';
 
-// Site header: logo on the left, and an Airbnb-style round "three lines" menu button on the
-// right that opens a dropdown card. Same on every screen size.
+// Site header: logo on the left. On desktop the links sit inline on the right (underline on hover);
+// on phones they move into an Airbnb-style round "three lines" button that opens a dropdown card.
 
 import Link from 'next/link';
 import Image from 'next/image';
@@ -12,7 +12,6 @@ import { Menu, MenuButton, MenuItem, MenuItems } from '@headlessui/react';
 const MENU_GROUPS = [
   [
     { name: 'Home', href: '/' },
-    { name: 'FAQs', href: '/faqs' },
     { name: 'Contact', href: '/contact' },
   ],
   [{ name: 'Follow us on TikTok', href: 'https://www.tiktok.com/@w2cai.com', external: true }],
@@ -27,6 +26,22 @@ export default function Header() {
           <Image alt="W2Cai Logo" src="/w2cai_logo.svg" className="h-auto w-18" width={72} height={16} />
         </Link>
 
+        {/* Desktop: plain inline links */}
+        <div className="hidden items-center gap-x-8 md:flex">
+          {MENU_GROUPS.flat().map((item) => (
+            <Link
+              key={item.name}
+              href={item.href}
+              {...('external' in item && item.external ? { target: '_blank', rel: 'noopener noreferrer' } : {})}
+              className="text-sm font-semibold text-gray-900 underline-offset-4 hover:underline"
+            >
+              {'external' in item && item.external ? 'TikTok' : item.name}
+            </Link>
+          ))}
+        </div>
+
+        {/* Phones: three-line menu */}
+        <div className="md:hidden">
         <Menu>
           {/* 40px light-gray circle with three lines, like Airbnb's */}
           <MenuButton
@@ -61,6 +76,7 @@ export default function Header() {
             ))}
           </MenuItems>
         </Menu>
+        </div>
       </nav>
     </header>
   );
