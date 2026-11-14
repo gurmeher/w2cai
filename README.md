@@ -7,7 +7,7 @@ W2C AI is a full-stack project that scans Reddit forums, extracts product links 
 ## Features
 - Reddit ingestion using PRAW
 - URL extraction for Weidian, Taobao, 1688, Yupoo
-- AI-generated product titles (OpenAI)
+- AI-generated product titles (Claude Haiku 5.5)
 - Data enrichment: image and price scraping per product URL
 - De-duplication + title merging for already-known URLs
 - Persistence in Postgres (via Supabase connection string)
@@ -17,7 +17,7 @@ W2C AI is a full-stack project that scans Reddit forums, extracts product links 
 ```text
 backend/
   db.py                # DB init, upsert, and fetch helpers (Postgres/Supabase)
-  scraper.py           # Reddit scraper + OpenAI titling + data enrichment
+  scraper.py           # Reddit scraper + Claude titling + data enrichment
   requirements.txt     # Python dependencies
 frontend/
   src/app/             # Next.js 15 app directory
@@ -28,7 +28,7 @@ frontend/
 - Python 3.11+
 - Node.js 18+ (for Next.js frontend)
 - A Postgres connection string (Supabase recommended)
-- OpenAI API key
+- Anthropic API key (platform.claude.com)
 - Reddit app credentials (script type)
 
 ## Environment Variables
@@ -37,8 +37,8 @@ Create `backend/.env` with:
 # Postgres connection string (e.g., from Supabase)
 SUPABASE_URL=postgresql://USER:PASSWORD@HOST:PORT/DATABASE
 
-# OpenAI
-OPENAI_API_KEY=sk-...
+# Anthropic (Claude)
+ANTHROPIC_API_KEY=sk-ant-...
 
 # Reddit API (create a Reddit app and set user agent)
 REDDIT_CLIENT_ID=...
@@ -70,7 +70,7 @@ python3 scraper.py
 The scraper will:
 - Fetch recent posts from a subreddit (configured in `scraper.py`)
 - Extract product URLs from title/body (+ a few OP comments)
-- Ask OpenAI for clean titles (and compare/merge with any existing titles)
+- Ask Claude for clean titles and categories (and compare/merge with any existing titles)
 - Scrape image and price per URL (via `scrape_product_data` in `imagescraper`)
 - Upsert into Postgres and link post↔item
 
@@ -87,20 +87,20 @@ Open http://localhost:3000 to view. The app is scaffolded and includes Supabase 
 ## How Data Flows
 1. Reddit posts fetched via PRAW
 2. Product URLs extracted via regex
-3. OpenAI produces concise product titles
+3. Claude produces concise product titles and categories
 4. Image and price scraped per URL
 5. Data upserted into `items`, linked via `post_item_links` to `posts`
 6. Frontend reads items and displays them
 
 ## Key Files to Know
-- `backend/scraper.py`: Orchestrates fetching posts, OpenAI titling, scraping, saves to DB
+- `backend/scraper.py`: Orchestrates fetching posts, Claude titling, scraping, saves to DB
 - `backend/db.py`: Database initialization and CRUD helpers
 - `frontend/src/app/*`: Next.js pages
 
 ## Troubleshooting
 - Python not found: use `python3` on macOS
 - `psycopg2` errors: verify `SUPABASE_URL` is a valid Postgres connection string with correct IP allow-listing in Supabase
-- OpenAI errors: verify `OPENAI_API_KEY` and model name used in `scraper.py`
+- Claude errors: verify `ANTHROPIC_API_KEY` and `CLAUDE_MODEL` in `scraper.py`
 - Reddit errors: verify client id/secret and user agent; ensure your app is a “script” type
 - Missing image/price: confirm `imagescraper.scrape_product_data(url)` exists and is callable; network-based scraping can be rate-limited—add user-agent rotation and polite delays
 

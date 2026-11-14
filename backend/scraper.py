@@ -1,8 +1,8 @@
 # scraper.py
 # Entry point (`python scraper.py`). Pulls new posts from Reddit, filters by flair,
-# extracts product links, calls GPT for titles, expands brand acronyms, and runs
+# extracts product links, calls Claude (Haiku) for titles, expands brand acronyms, and runs
 # posts in parallel.
-# Talks to: Reddit API (praw), OpenAI, imagescraper.py, db.py
+# Talks to: Reddit API (praw), Anthropic (Claude), imagescraper.py, db.py
 # See backend/README.md for the full flow of one post.
 #
 # Current bottlenecks: can't read slideshow posts, can't read posts with no product
@@ -14,14 +14,17 @@ import time # time module for sleep functionality so we dont spam reddit
 from dotenv import load_dotenv # to load environment variables from a .env file
 import os # lets us access environment variables, pythons standard library for interacting with the operating system
 from db import save_post_with_items, get_existing_permalinks, get_existing_items_by_urls
-import openai
-import json
+import anthropic # Claude API
+from pydantic import BaseModel # describes the exact JSON shape Claude must return
+from typing import Literal
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from urllib.parse import urlparse
 
 load_dotenv()
 
-openai.api_key = os.getenv("OPENAI_API_KEY") # gets openai key from environment variables 
+# Reads ANTHROPIC_API_KEY from the environment (.env). Retries rate limits and server errors on its own.
+claude = anthropic.Anthropic()
+CLAUDE_MODEL = "claude-haiku-5-5"  # cheap, fast; thinking is turned off per request below
 
 reddit = praw.Reddit(
     client_id=os.getenv("REDDIT_CLIENT_ID"),
@@ -43,8 +46,17 @@ ALLOWED_PRODUCT_HOST_SUFFIXES = (".weidian.com",)
 SKIP_FLAIRS={"w2c", "shitpost", "guide", "news", 
              "presale", "lc", "announcement", "interest check"}
 
-# Product types GPT must choose from (keep in sync with frontend/src/lib/filters.ts)
+# Product types Claude must choose from (keep in sync with frontend/src/lib/filters.ts)
 CATEGORIES = ["Shirts", "Pants", "Shorts", "Outerwear", "Shoes", "Accessories", "Other"]
+
+# The answer shape Claude is held to (structured outputs): one entry per URL, categories only from the list above
+class NamedItem(BaseModel):
+    url: str
+    name: str
+    categories: list[Literal[tuple(CATEGORIES)]]
+
+class NamedItems(BaseModel):
+    items: list[NamedItem]
 
 # Configuration
 BATCH_SIZE = 5 # Number of posts to process in parallel
@@ -137,8 +149,9 @@ def expand_brand_acronyms(item_name):
     
     return expanded_name
 
-def ask_gpt_for_titles(post_text, urls, existing_items=None, retries=0): # Enhanced function with existing items check
-    print("⬜️[SYSTEM] ChatGPT Called")
+def ask_claude_for_titles(post_text, urls, existing_items=None, retries=0):
+    """Ask Claude for a clean title + categories per product URL (merging with existing titles), then scrape image/price"""
+    print("⬜️[SYSTEM] Claude Called")
     
     existing_context = ""
     if existing_items:
@@ -168,13 +181,7 @@ def ask_gpt_for_titles(post_text, urls, existing_items=None, retries=0): # Enhan
           "Outerwear" covers hoodies, sweaters, jackets and coats. Use ["Other"] if unsure or none fit.
         - IMPORTANT: If the URL exists in the database (see section below), COMPARE the prior title with your new one and return a single best title. If both have complementary info, MERGE into one concise title. If they are clearly different items, use the new one.
 
-        OUTPUT
-        Return ONLY valid JSON (no extra text, no markdown). Format:
-        [
-        {{"url": "https://example.com/item1", "name": "Techwear Cargo Pants", "categories": ["Pants"]}},
-        {{"url": "https://example.com/item2", "name": "Jordan 1 Sneakers", "categories": ["Shoes"]}},
-        {{"url": "https://example.com/item3", "name": "Essentials Hoodie & Sweatpants Set", "categories": ["Outerwear", "Pants"]}}
-        ]
+        Return one entry per product link, with its url exactly as given.
 
         {existing_context}
 
@@ -186,79 +193,48 @@ def ask_gpt_for_titles(post_text, urls, existing_items=None, retries=0): # Enhan
         """
 
     try:
-        response = openai.chat.completions.create(
-            model="gpt-4o-mini", # Faster and cheaper than gpt-4-turbo
+        response = claude.messages.parse(
+            model=CLAUDE_MODEL,
+            max_tokens=2048,
+            thinking={"type": "disabled"},  # naming items needs no reasoning; thinking would be billed as output
+            output_format=NamedItems,       # the reply must match NamedItems, so it always parses
             messages=[{"role": "user", "content": prompt}],
-            temperature=0.1,  # Lower temperature for more consistent output
-            max_tokens=1000  # Limit tokens for faster response
         )
-        
-        content = response.choices[0].message.content.strip()
-        
-        # Debug: Print what GPT actually returned
-        print(f"🔍[DEBUG] GPT Response: {content[:200]}...")
-        
-        # Handle empty responses
-        if not content:
-            print("🟨[GPT-EMPTY] GPT returned empty response")
+
+        if response.stop_reason == "refusal":  # rare: the model declined this post
+            print("🟨[CLAUDE-REFUSAL] Claude declined this post, skipping")
             return []
-        
-        # Clean up common GPT formatting issues
-        if content.startswith("```json"):
-            content = content.replace("```json", "").replace("```", "").strip()
-        elif content.startswith("```"):
-            content = content.replace("```", "").strip()
-        
-        # Try to parse JSON
-        try:
-            named_urls = json.loads(content)
-        except json.JSONDecodeError as json_err:
-            print(f"🟨[JSON-ERROR] Failed to parse JSON: {json_err}")
-            print(f"🟨[JSON-CONTENT] Content was: {content}")
-            
-            # Try to extract JSON from response if GPT added extra text
-            json_match = re.search(r'\[.*?\]', content, re.DOTALL)
-            if json_match:
-                try:
-                    named_urls = json.loads(json_match.group())
-                    print("🟩[JSON-RECOVERED] Successfully extracted JSON from response")
-                except:
-                    named_urls = []
-            else:
-                named_urls = []
-        
-        # Validate the response structure
-        if not isinstance(named_urls, list):
-            print(f"🟨[VALIDATION] Expected list, got {type(named_urls)}")
+        if response.parsed_output is None:  # e.g. cut off by max_tokens
+            print(f"🟨[CLAUDE-EMPTY] No usable answer (stop_reason={response.stop_reason})")
             return []
-        
+
+        named_urls = [item.model_dump() for item in response.parsed_output.items]
+        print(f"🔍[DEBUG] Claude named {len(named_urls)} item(s)")
+
         # Filter out invalid items
-        allowed_urls = set(urls)  # only URLs we extracted ourselves, never ones GPT made up or altered
+        allowed_urls = set(urls)  # only URLs we extracted ourselves, never ones the model made up or altered
         valid_items = []
         for item in named_urls:
-            if isinstance(item, dict) and "url" in item and "name" in item:
-                if item["url"] not in allowed_urls:
-                    print(f"🟨[VALIDATION] Skipping URL not in post: {item['url']}")
-                    continue
-                item["name"] = expand_brand_acronyms(item["name"])
-                item["categories"] = clean_categories(item.get("categories"))
-                valid_items.append(item)
-            else:
-                print(f"🟨[VALIDATION] Skipping invalid item: {item}")
-        
+            if item["url"] not in allowed_urls:
+                print(f"🟨[VALIDATION] Skipping URL not in post: {item['url']}")
+                continue
+            item["name"] = expand_brand_acronyms(item["name"])
+            item["categories"] = clean_categories(item.get("categories"))
+            valid_items.append(item)
+
         # Parallel data scraping (images + prices)
         if valid_items:
             scrape_data_parallel(valid_items)
-        
+
         return valid_items
-    
+
     except Exception as e:
         if retries < 2:  # Retry up to 2 times
-            print(f"🟨[GPT-RETRY] GPT failed, retrying ({retries + 1}/2): {e}")
+            print(f"🟨[CLAUDE-RETRY] Claude failed, retrying ({retries + 1}/2): {e}")
             time.sleep(2 ** retries)  # Exponential backoff
-            return ask_gpt_for_titles(post_text, urls, existing_items, retries + 1)
+            return ask_claude_for_titles(post_text, urls, existing_items, retries + 1)
         else:
-            print(f"🟥🟥🟥[GPT-ERROR] GPT failed after retries: {e}")
+            print(f"🟥🟥🟥[CLAUDE-ERROR] Claude failed after retries: {e}")
             return []
 
 def scrape_single_item_data(item):
@@ -314,7 +290,7 @@ def is_allowed_product_url(url):
     return host in ALLOWED_PRODUCT_HOSTS or host.endswith(ALLOWED_PRODUCT_HOST_SUFFIXES)
 
 def clean_categories(raw):
-    """Keep up to two known categories from GPT's answer, in order, without repeats; default ["Other"].
+    """Keep up to two known categories from the model's answer, in order, without repeats; default ["Other"].
     "Other" is only kept when nothing more specific was given."""
     if isinstance(raw, str):
         raw = [raw]
@@ -394,8 +370,8 @@ def process_single_post(post_info):
         #if existing_items:
             #print(f"🔍[EXISTING] Found {len(existing_items)} existing items for comparison")
 
-        # GPT with existing items (enables compare/merge behavior in prompt)
-        named_urls = ask_gpt_for_titles(full_text, product_urls, existing_items)
+        # Claude with existing items (enables compare/merge behavior in prompt)
+        named_urls = ask_claude_for_titles(full_text, product_urls, existing_items)
         if not named_urls:
             print(f"🟨[NOURL-SKIPPED] No named URLs found for: {post_data['title']}")
             return False

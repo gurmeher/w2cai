@@ -67,7 +67,7 @@ def init_db():
         ADD COLUMN IF NOT EXISTS price DECIMAL(10,2);
     ''')
 
-    # Product types (1-2 of Shirts, Pants, Shoes, ...), chosen by GPT in scraper.py
+    # Product types (1-2 of Shirts, Pants, Shoes, ...), chosen by Claude in scraper.py
     cur.execute('''
         ALTER TABLE items
         ADD COLUMN IF NOT EXISTS categories TEXT[];
